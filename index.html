@@ -429,9 +429,29 @@
                   </select>
                 </div>
               </div>
-              <div class="form-group">
+              <div id="income-single-date-group" class="form-group" style="display: none">
                 <label for="income-date">Data do Recebimento</label>
-                <input id="income-date" class="form-control" type="date" required />
+                <input id="income-date" class="form-control" type="date" />
+              </div>
+              <div id="income-recurring-group" class="recurring-box">
+                <span class="recurring-title">&#128260; Salário recorrente — registra sozinho todo mês</span>
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="income-rule-type">Regra de Pagamento</label>
+                    <select id="income-rule-type" class="form-control">
+                      <option value="businessDay">Nº dia útil do mês</option>
+                      <option value="fixedDay">Dia fixo do mês</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label id="income-rule-day-label" for="income-rule-day">Qual dia útil? (ex: 5)</label>
+                    <input id="income-rule-day" class="form-control" type="number" min="1" max="31" value="5" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="income-start-month">Começa a contar a partir de</label>
+                  <input id="income-start-month" class="form-control" type="month" />
+                </div>
               </div>
               <button id="submit-income-btn" type="submit" class="btn btn-primary">Adicionar Entrada ao Ciclo</button>
             </form>

@@ -1185,3 +1185,95 @@ body {
 .user-logout-btn:hover {
   background-color: var(--coral-soft);
 }
+
+/* ===== Correções de overflow dos campos (textbox saindo do painel) ===== */
+.form-control {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.form-group,
+.form-grid > *,
+.split-grid > *,
+.cycle-hero > *,
+.panel {
+  min-width: 0;
+}
+
+/* Linhas de 2 colunas dentro dos formulários (substitui grids inline) */
+.form-grid > div[style*="grid-template-columns"],
+.auth-form > div[style*="grid-template-columns"],
+.form-row-2 {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
+  gap: 12px;
+}
+
+@media (max-width: 520px) {
+  .form-grid > div[style*="grid-template-columns"],
+  .form-row-2 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+/* Badge do usuário: texto longo (e-mail) não estoura mais */
+.user-profile-badge {
+  gap: 8px;
+}
+
+.user-profile-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.user-profile-name,
+.user-profile-meta,
+#firebase-status-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+}
+
+.user-logout-btn {
+  flex-shrink: 0;
+}
+
+.sync-status-btn {
+  min-width: 0;
+}
+
+/* Caixa de recorrência do salário */
+.recurring-box {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 14px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.recurring-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--emerald);
+}
+
+.tag.recurring {
+  background-color: rgba(20, 184, 166, 0.15);
+  color: var(--teal);
+}
+
+.tag.skipped {
+  background-color: var(--bg-elevated);
+  color: var(--text-muted);
+  text-decoration: line-through;
+}
+
+.row-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}

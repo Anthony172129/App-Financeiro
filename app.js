@@ -15,7 +15,8 @@ const getInitialSeedData = () => {
     pixExpenses: [],
     debts: [],
     vaultGoals: [],
-    vaultMovements: []
+    vaultMovements: [],
+    recurringIncomes: []
   };
 };
 
@@ -42,7 +43,8 @@ const authService = new FinanceAuthAndStorageService(
         pixExpenses: remoteData.pixExpenses || [],
         debts: remoteData.debts || [],
         vaultGoals: remoteData.vaultGoals || [],
-        vaultMovements: remoteData.vaultMovements || []
+        vaultMovements: remoteData.vaultMovements || [],
+        recurringIncomes: remoteData.recurringIncomes || []
       };
       renderAll();
     }
@@ -103,8 +105,69 @@ function handleAuthChange(user, profile) {
     firebaseStatusText.textContent = 'Não autenticado';
   }
 }
+// ===== Salário Recorrente =====
+// Calcula o N-ésimo dia útil (seg–sex) do mês. Não considera feriados.
+function nthBusinessDay(ym, n) {
+  const [y, m] = ym.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  let count = 0;
+  for (let d = 1; d <= lastDay; d++) {
+    const wd = new Date(y, m - 1, d).getDay();
+    if (wd !== 0 && wd !== 6) {
+      count++;
+      if (count === n) return d;
+    }
+  }
+  return lastDay;
+}
+
+function recurringDateFor(rec, ym) {
+  const [y, m] = ym.split('-').map(Number);
+  const lastDay = new Date(y, m, 0).getDate();
+  const day = rec.ruleType === 'businessDay'
+    ? nthBusinessDay(ym, Number(rec.day) || 5)
+    : Math.min(Number(rec.day) || 1, lastDay);
+  return `${ym}-${String(day).padStart(2, '0')}`;
+}
+
+function ruleLabel(rec) {
+  return rec.ruleType === 'businessDay' ? `Todo ${rec.day}º dia útil` : `Todo dia ${rec.day}`;
+}
+
+// Gera as entradas do mês a partir das recorrências (não remove nada sozinho:
+// ajustes e pulos são sempre feitos manualmente pelo usuário)
+function getRecurringIncomesFor(ym) {
+  const list = Array.isArray(state.recurringIncomes) ? state.recurringIncomes : [];
+  return list
+    .filter((r) => !r.startMonth || ym >= r.startMonth)
+    .filter((r) => !r.endMonth || ym <= r.endMonth)
+    .map((r) => {
+      const overrides = r.overrides || {};
+      const skipped = Array.isArray(r.skippedMonths) && r.skippedMonths.includes(ym);
+      const hasOverride = Object.prototype.hasOwnProperty.call(overrides, ym);
+      const amount = skipped ? 0 : hasOverride ? Number(overrides[ym]) : Number(r.amount);
+      return {
+        id: `rec-${r.id}-${ym}`,
+        recurringId: r.id,
+        description: r.description,
+        category: r.category || 'Salário',
+        date: recurringDateFor(r, ym),
+        month: ym,
+        amount,
+        baseAmount: Number(r.amount),
+        isRecurring: true,
+        skipped,
+        adjusted: hasOverride && !skipped,
+        rule: ruleLabel(r)
+      };
+    });
+}
+
 function getMonthSummary(ym) {
-  const incomes = state.incomes.filter((i) => i.month === ym);
+  const incomes = [
+    ...getRecurringIncomesFor(ym),
+    ...state.incomes.filter((i) => i.month === ym)
+  ];
   const pixExpenses = state.pixExpenses.filter((p) => p.month === ym);
   const cardExpenses = state.cardExpenses.filter((c) => c.month === ym);
 
@@ -330,7 +393,7 @@ function renderOverview(summary) {
   const { totalIncome, totalPix, totalCards, totalDebtMonth, totalExpenses, freeBalance } = summary;
 
   document.getElementById('kpi-income').textContent = formatBRL(totalIncome);
-  document.getElementById('kpi-income-sub').textContent = `${summary.incomes.length} entrada(s) no mês`;
+  document.getElementById('kpi-income-sub').textContent = `${summary.incomes.filter(i => !i.skipped).length} entrada(s) no mês`;
 
   document.getElementById('kpi-pix').textContent = formatBRL(totalPix);
   const pixPct = totalIncome > 0 ? Math.round((totalPix / totalIncome) * 100) : 0;
@@ -608,25 +671,115 @@ function renderPixAndIncomesView(summary) {
     incTbody.innerHTML = `<tr><td colspan="5" class="empty-state">Nenhuma entrada cadastrada neste mês.</td></tr>`;
   } else {
     incTbody.innerHTML = summary.incomes
-      .map(
-        (inc) => `
+      .map((inc) => {
+        const dateStr = inc.date ? inc.date.split('-').reverse().join('/') : '-';
+        if (!inc.isRecurring) {
+          return `
         <tr>
           <td><strong>${inc.description}</strong></td>
           <td><span class="tag income">${inc.category}</span></td>
-          <td style="font-family: var(--font-mono); font-size: 0.82rem">${inc.date ? inc.date.split('-').reverse().join('/') : '-'}</td>
+          <td style="font-family: var(--font-mono); font-size: 0.82rem">${dateStr}</td>
           <td class="amount-positive">+ ${formatBRL(inc.amount)}</td>
           <td>
             <button class="btn btn-danger btn-sm" data-del-inc="${inc.id}">Remover</button>
           </td>
-        </tr>
-      `
-      )
+        </tr>`;
+        }
+
+        const status = inc.skipped
+          ? '<span class="tag skipped">Não recebido neste mês</span>'
+          : inc.adjusted
+            ? `<span class="tag card">Ajustado (padrão ${formatBRL(inc.baseAmount)})</span>`
+            : '';
+
+        return `
+        <tr>
+          <td>
+            <strong>${inc.description}</strong>
+            <div style="font-size: 0.74rem; color: var(--text-secondary)">&#128260; ${inc.rule} ${status}</div>
+          </td>
+          <td><span class="tag recurring">${inc.category} fixo</span></td>
+          <td style="font-family: var(--font-mono); font-size: 0.82rem">${dateStr}</td>
+          <td class="amount-positive" style="${inc.skipped ? 'opacity:0.5; text-decoration: line-through' : ''}">
+            + ${formatBRL(inc.skipped ? inc.baseAmount : inc.amount)}
+          </td>
+          <td>
+            <div class="row-actions">
+              ${
+                inc.skipped
+                  ? `<button class="btn btn-primary btn-sm" data-rec-restore="${inc.recurringId}" title="Volta a contar o salário neste mês">Restaurar mês</button>`
+                  : `<button class="btn btn-secondary btn-sm" data-rec-adjust="${inc.recurringId}" title="Muda o valor só deste mês (ex: desconto, férias)">Ajustar valor</button>
+                     <button class="btn btn-secondary btn-sm" data-rec-skip="${inc.recurringId}" title="Zera só este mês; os próximos continuam">Zerar mês</button>`
+              }
+              ${inc.adjusted ? `<button class="btn btn-secondary btn-sm" data-rec-restore="${inc.recurringId}">Voltar ao padrão</button>` : ''}
+              <button class="btn btn-danger btn-sm" data-rec-end="${inc.recurringId}" title="Para de registrar a partir deste mês">Encerrar</button>
+            </div>
+          </td>
+        </tr>`;
+      })
       .join('');
 
     document.querySelectorAll('[data-del-inc]').forEach((btn) => {
       btn.addEventListener('click', () => {
         const id = btn.getAttribute('data-del-inc');
         state.incomes = state.incomes.filter((i) => i.id !== id);
+        persistAndRender();
+      });
+    });
+
+    const findRec = (id) => (state.recurringIncomes || []).find((r) => r.id === id);
+
+    // Ajusta o valor apenas do mês selecionado — a recorrência continua normalmente
+    document.querySelectorAll('[data-rec-adjust]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rec = findRec(btn.getAttribute('data-rec-adjust'));
+        if (!rec) return;
+        const current = rec.overrides && rec.overrides[selectedMonth] != null ? rec.overrides[selectedMonth] : rec.amount;
+        const input = prompt(
+          `Valor recebido em ${formatMonthLabel(selectedMonth)} (padrão: ${formatBRL(rec.amount)}).\nOs próximos meses continuam com o valor padrão.`,
+          String(current)
+        );
+        if (input === null) return;
+        const val = parseFloat(String(input).replace(/\./g, '').replace(',', '.'));
+        if (isNaN(val) || val < 0) return;
+        rec.overrides = rec.overrides || {};
+        rec.overrides[selectedMonth] = val;
+        rec.skippedMonths = (rec.skippedMonths || []).filter((m) => m !== selectedMonth);
+        persistAndRender();
+      });
+    });
+
+    // Zera apenas este mês (ex: férias) — continua auto-registrando nos próximos
+    document.querySelectorAll('[data-rec-skip]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rec = findRec(btn.getAttribute('data-rec-skip'));
+        if (!rec) return;
+        rec.skippedMonths = Array.from(new Set([...(rec.skippedMonths || []), selectedMonth]));
+        persistAndRender();
+      });
+    });
+
+    document.querySelectorAll('[data-rec-restore]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rec = findRec(btn.getAttribute('data-rec-restore'));
+        if (!rec) return;
+        rec.skippedMonths = (rec.skippedMonths || []).filter((m) => m !== selectedMonth);
+        if (rec.overrides) delete rec.overrides[selectedMonth];
+        persistAndRender();
+      });
+    });
+
+    // Encerra: mantém histórico dos meses anteriores, para de registrar a partir deste mês
+    document.querySelectorAll('[data-rec-end]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const rec = findRec(btn.getAttribute('data-rec-end'));
+        if (!rec) return;
+        if (!confirm(`Encerrar "${rec.description}" a partir de ${formatMonthLabel(selectedMonth)}? Os meses anteriores ficam no histórico.`)) return;
+        if (!rec.startMonth || selectedMonth <= rec.startMonth) {
+          state.recurringIncomes = state.recurringIncomes.filter((r) => r.id !== rec.id);
+        } else {
+          rec.endMonth = shiftMonth(selectedMonth, -1);
+        }
         persistAndRender();
       });
     });
@@ -1094,25 +1247,73 @@ function initApp() {
     persistAndRender();
   });
 
+  // Income form: toggle recurring (Salário Fixo) vs single-date fields
+  const incomeCategoryEl = document.getElementById('income-category');
+  const incomeRuleTypeEl = document.getElementById('income-rule-type');
+  const incomeRuleDayEl = document.getElementById('income-rule-day');
+  const applyIncomeFormMode = () => {
+    const isSalary = incomeCategoryEl.value === 'Salário';
+    document.getElementById('income-recurring-group').style.display = isSalary ? '' : 'none';
+    document.getElementById('income-single-date-group').style.display = isSalary ? 'none' : '';
+    const isBusiness = incomeRuleTypeEl.value === 'businessDay';
+    document.getElementById('income-rule-day-label').textContent = isBusiness
+      ? 'Qual dia útil? (ex: 5)'
+      : 'Qual dia do mês? (ex: 20)';
+    incomeRuleDayEl.max = isBusiness ? 23 : 31;
+    const startEl = document.getElementById('income-start-month');
+    if (!startEl.value) startEl.value = selectedMonth;
+    const dateEl = document.getElementById('income-date');
+    if (!dateEl.value) dateEl.value = todayISO();
+  };
+  incomeCategoryEl.addEventListener('change', applyIncomeFormMode);
+  incomeRuleTypeEl.addEventListener('change', () => {
+    incomeRuleDayEl.value = incomeRuleTypeEl.value === 'businessDay' ? 5 : 20;
+    applyIncomeFormMode();
+  });
+  applyIncomeFormMode();
+
   // Form: Add Income (Entrada / Lucro Bruto)
   document.getElementById('form-add-income').addEventListener('submit', (e) => {
     e.preventDefault();
     const description = document.getElementById('income-desc').value.trim();
     const amount = parseFloat(document.getElementById('income-amount').value);
-    const category = document.getElementById('income-category').value;
-    const date = document.getElementById('income-date').value || todayISO();
+    const category = incomeCategoryEl.value;
 
     if (!description || isNaN(amount)) return;
-    state.incomes.push({
-      id: `inc-${Date.now()}`,
-      description,
-      amount,
-      category,
-      date,
-      month: selectedMonth
-    });
+
+    if (category === 'Salário') {
+      const ruleType = incomeRuleTypeEl.value === 'fixedDay' ? 'fixedDay' : 'businessDay';
+      const maxDay = ruleType === 'businessDay' ? 23 : 31;
+      const day = Math.min(Math.max(parseInt(incomeRuleDayEl.value, 10) || (ruleType === 'businessDay' ? 5 : 20), 1), maxDay);
+      const startMonth = document.getElementById('income-start-month').value || selectedMonth;
+      state.recurringIncomes = Array.isArray(state.recurringIncomes) ? state.recurringIncomes : [];
+      state.recurringIncomes.push({
+        id: `ri-${Date.now()}`,
+        description,
+        amount,
+        category: 'Salário',
+        ruleType,
+        day,
+        startMonth,
+        skippedMonths: [],
+        overrides: {}
+      });
+    } else {
+      const date = document.getElementById('income-date').value || todayISO();
+      state.incomes.push({
+        id: `inc-${Date.now()}`,
+        description,
+        amount,
+        category,
+        date,
+        month: selectedMonth
+      });
+    }
     e.target.reset();
+    incomeRuleDayEl.value = 5;
+    document.getElementById('income-start-month').value = selectedMonth;
     document.getElementById('income-date').value = todayISO();
+    applyIncomeFormMode();
     persistAndRender();
   });
 
