@@ -117,57 +117,66 @@
         </div>
       </header>
 
-      <!-- KPI Strip -->
-      <section class="kpi-grid" aria-label="Indicadores Principais do Mês">
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span>Lucro / Entradas (Teto)</span>
-            <div class="kpi-icon income">&#8593;</div>
-          </div>
-          <div id="kpi-income" class="kpi-value">R$ 0,00</div>
-          <div class="kpi-sub">
-            <span id="kpi-income-sub">0 entradas no mês</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span>Gastos Fora de Cartão (Pix / Dinheiro)</span>
-            <div class="kpi-icon pix">&#9889;</div>
-          </div>
-          <div id="kpi-pix" class="kpi-value">R$ 0,00</div>
-          <div class="kpi-sub">
-            <span id="kpi-pix-sub">0% das entradas</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span>Faturas de Cartões</span>
-            <div class="kpi-icon cards">&#128179;</div>
-          </div>
-          <div id="kpi-cards" class="kpi-value">R$ 0,00</div>
-          <div class="kpi-sub">
-            <span id="kpi-cards-sub">0% das entradas</span>
-          </div>
-        </div>
-
-        <div class="kpi-card">
-          <div class="kpi-top">
-            <span>Saldo Livre (Sobra Real)</span>
-            <div class="kpi-icon net">&#10003;</div>
-          </div>
-          <div id="kpi-net" class="kpi-value">R$ 0,00</div>
-          <div class="kpi-sub">
-            <span id="kpi-net-sub">0% da renda comprometida</span>
-          </div>
-        </div>
-      </section>
-
       <!-- 1. TELA INICIAL: CICLO DO DINHEIRO -->
       <section id="overview-view" class="view-section active">
-        <!-- Painel de Alertas de Vencimento / Atrasos (abaixo dos KPIs) -->
-        <div id="due-alerts-panel" class="due-alerts-panel" style="display: none"></div>
+        <!-- KPI Strip (exclusivo do Ciclo do Dinheiro) -->
+        <div class="kpi-grid" aria-label="Indicadores Principais do Mês">
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Lucro / Entradas (Teto)</span>
+              <div class="kpi-icon income">&#8593;</div>
+            </div>
+            <div id="kpi-income" class="kpi-value">R$ 0,00</div>
+            <div class="kpi-sub">
+              <span id="kpi-income-sub">0 entradas no mês</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Gastos Fora de Cartão (Pix / Dinheiro)</span>
+              <div class="kpi-icon pix">&#9889;</div>
+            </div>
+            <div id="kpi-pix" class="kpi-value">R$ 0,00</div>
+            <div class="kpi-sub">
+              <span id="kpi-pix-sub">0% das entradas</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Faturas de Cartões</span>
+              <div class="kpi-icon cards">&#128179;</div>
+            </div>
+            <div id="kpi-cards" class="kpi-value">R$ 0,00</div>
+            <div class="kpi-sub">
+              <span id="kpi-cards-sub">0% das entradas</span>
+            </div>
+          </div>
+
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Saldo Livre (Sobra Real)</span>
+              <div class="kpi-icon net">&#10003;</div>
+            </div>
+            <div id="kpi-net" class="kpi-value">R$ 0,00</div>
+            <div class="kpi-sub">
+              <span id="kpi-net-sub">0% da renda comprometida</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Novos Containers em Ordem de Vencimento / Data de Pagamento (Cartões, Dívidas, Pix e Caixinhas) -->
+        <div class="schedule-section">
+          <div class="schedule-header">
+            <div class="schedule-header-text">
+              <h3>Contas, Faturas &amp; Compromissos por Ordem de Data</h3>
+              <p>Seus cartões, dívidas/acordos, caixinhas e gastos no Pix/Dinheiro ordenados pela data prevista de pagamento (em vermelho quando próximos do vencimento ou atrasados).</p>
+            </div>
+            <span id="schedule-count-badge" class="nav-badge">0 itens no mês</span>
+          </div>
+          <div id="due-schedule-grid" class="kpi-grid schedule-cards-grid"></div>
+        </div>
 
         <div class="cycle-hero">
           <!-- Pie Chart Card -->

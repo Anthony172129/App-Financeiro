@@ -435,102 +435,206 @@ function renderPieSVG(summary) {
     .join('');
 }
 
-// Renderiza o painel de alertas em vermelho abaixo dos KPIs no Ciclo do Dinheiro
-function renderDueAlertsPanel(summary) {
-  const panel = document.getElementById('due-alerts-panel');
-  if (!panel) return;
+// Renderiza os novos containers (mesmo padrão dos KPIs) em ordem de data prevista de pagamento
+// (Cartões, Dívidas & Acordos, Caixinhas do Cofrinho e Pix / Dinheiro), destacando em vermelho os próximos de vencer ou atrasados
+function renderDueScheduleCards(summary) {
+  const grid = document.getElementById('due-schedule-grid');
+  const countBadge = document.getElementById('schedule-count-badge');
+  if (!grid) return;
 
-  const alerts = [];
+  const items = [];
 
-  // 1. Dívidas ativas no mês que ainda não foram marcadas como pagas
+  // 1. Faturas de Cartões (usa o dia de pagamento/vencimento da fatura)
+  state.cards.forEach((card) => {
+    const creditItems = summary.cardExpenses.filter((ce) => ce.cardId === card.id && ce.mode !== 'debit');
+    const debitItems = summary.cardExpenses.filter((ce) => ce.cardId === card.id && ce.mode === 'debit');
+    const invoiceAmount = creditItems.reduce((acc, i) => acc + Number(i.amount || 0), 0);
+    const debitAmount = debitItems.reduce((acc, i) => acc + Number(i.amount || 0), 0);
+    const dueDay = Number(card.dueDay) || 12;
+    const isPaid = Array.isArray(card.paidMonths) && card.paidMonths.includes(selectedMonth);
+    const status = checkDueStatus(dueDay, selectedMonth, isPaid || invoiceAmount <= 0);
+
+    items.push({
+      id: `sched-card-${card.id}`,
+      day: dueDay,
+      dateText: `Vencimento: Dia ${String(dueDay).padStart(2, '0')}`,
+      typeLabel: 'Fatura de Cartão',
+      icon: '&#128179;',
+      iconClass: 'cards',
+      title: card.name,
+      amount: invoiceAmount,
+      extraSub:
+        invoiceAmount <= 0
+          ? debitAmount > 0
+            ? `Sem fatura crédito • Débito: ${formatBRL(debitAmount)}`
+            : 'Fatura zerada neste mês'
+          : isPaid
+            ? '✓ Fatura marcada como Paga'
+            : status.label,
+      isUrgent: status.isNearOrOverdue && invoiceAmount > 0 && !isPaid,
+      isPaid: isPaid || invoiceAmount <= 0,
+      targetTab: 'cards-view',
+      actionLabel: 'Abrir Cartões'
+    });
+  });
+
+  // 2. Dívidas e Acordos ativos no mês (usa o dia de vencimento da parcela)
   summary.activeDebts.forEach((d) => {
+    const dueDay = Number(d.dueDay) || 10;
     const paidMonthsList = Array.isArray(d.paidMonths) ? d.paidMonths : [];
     const isPaid = paidMonthsList.includes(selectedMonth);
-    const status = checkDueStatus(d.dueDay || 10, selectedMonth, isPaid);
-    if (status.isNearOrOverdue) {
-      alerts.push({
-        title: `Dívida: ${d.creditor}`,
-        subtitle: status.label,
-        amount: Number(d.monthlyInstallment || 0),
-        targetTab: 'debts-view',
-        btnText: 'Ver Dívida'
-      });
-    }
+    const status = checkDueStatus(dueDay, selectedMonth, isPaid);
+    const remaining = Math.max(0, Number(d.totalAmount || 0) - Number(d.paidAmount || 0));
+
+    items.push({
+      id: `sched-debt-${d.id}`,
+      day: dueDay,
+      dateText: `Vencimento: Dia ${String(dueDay).padStart(2, '0')}`,
+      typeLabel: 'Dívida / Acordo',
+      icon: '&#128196;',
+      iconClass: 'debt',
+      title: d.creditor,
+      amount: Number(d.monthlyInstallment || 0),
+      extraSub: isPaid
+        ? `✓ Parcela paga • Resta ${formatBRL(remaining)}`
+        : `${status.label} • Resta ${formatBRL(remaining)}`,
+      isUrgent: status.isNearOrOverdue && !isPaid,
+      isPaid,
+      targetTab: 'debts-view',
+      actionLabel: isPaid ? 'Ver Dívida' : 'Pagar / Ver'
+    });
   });
 
-  // 2. Faturas de Cartões com saldo em aberto no mês e não marcadas como pagas
-  state.cards.forEach((card) => {
-    const cardCreditItems = summary.cardExpenses.filter((ce) => ce.cardId === card.id && ce.mode !== 'debit');
-    const invoiceAmount = cardCreditItems.reduce((acc, i) => acc + Number(i.amount || 0), 0);
-    if (invoiceAmount <= 0) return;
-    const isPaid = Array.isArray(card.paidMonths) && card.paidMonths.includes(selectedMonth);
-    const status = checkDueStatus(card.dueDay || 12, selectedMonth, isPaid);
-    if (status.isNearOrOverdue) {
-      alerts.push({
-        title: `Fatura: ${card.name}`,
-        subtitle: status.label,
-        amount: invoiceAmount,
-        targetTab: 'cards-view',
-        btnText: 'Ver Fatura'
-      });
-    }
-  });
-
-  // 3. Caixinhas (Cofrinho) que não atingiram o mínimo mensal até a data limite
+  // 3. Caixinhas do Cofrinho (usa o dia limite mensal de depósito)
   const goals = Array.isArray(state.vaultGoals) ? state.vaultGoals : [];
   goals.forEach((g) => {
     const minMonthly = Number(g.minMonthly || 0);
-    if (minMonthly <= 0) return;
+    const dueDay = Number(g.dueDay) || 10;
     const depositedInMonth = summary.vaultDepositsMonth
       .filter((m) => m.goalId === g.id)
       .reduce((acc, m) => acc + Number(m.amount || 0), 0);
-    const isFulfilled = depositedInMonth >= minMonthly;
-    const status = checkDueStatus(g.dueDay || 10, selectedMonth, isFulfilled);
-    if (status.isNearOrOverdue) {
-      const missing = Math.max(0, minMonthly - depositedInMonth);
-      alerts.push({
-        title: `Caixinha: ${g.name}`,
-        subtitle: `${status.label} • Falta guardar ${formatBRL(missing)}`,
-        amount: missing,
-        targetTab: 'vault-view',
-        btnText: 'Guardar Agora'
-      });
-    }
+    const isFulfilled = minMonthly > 0 ? depositedInMonth >= minMonthly : depositedInMonth > 0;
+    const status = checkDueStatus(dueDay, selectedMonth, isFulfilled);
+    const missing = Math.max(0, minMonthly - depositedInMonth);
+
+    items.push({
+      id: `sched-vault-${g.id}`,
+      day: dueDay,
+      dateText: `Data Limite: Dia ${String(dueDay).padStart(2, '0')}`,
+      typeLabel: 'Caixinha / Cofrinho',
+      icon: '&#128176;',
+      iconClass: 'income',
+      title: g.name,
+      amount: minMonthly > 0 ? minMonthly : depositedInMonth,
+      extraSub: isFulfilled
+        ? `✓ Guardado no mês: ${formatBRL(depositedInMonth)}`
+        : `${status.label} • Falta ${formatBRL(missing)}`,
+      isUrgent: status.isNearOrOverdue && !isFulfilled,
+      isPaid: isFulfilled,
+      targetTab: 'vault-view',
+      actionLabel: isFulfilled ? 'Ver Caixinha' : 'Guardar no Mês'
+    });
   });
 
-  if (alerts.length === 0) {
-    panel.style.display = 'none';
-    panel.innerHTML = '';
+  // 4. Gastos no Pix / Dinheiro / Cartão Débito do mês (ordenados pelo dia do pagamento)
+  summary.pixExpenses.forEach((p) => {
+    const day = p.date ? parseInt(p.date.split('-')[2], 10) || 1 : 1;
+    const fmtDate = p.date ? p.date.split('-').reverse().join('/') : `Dia ${String(day).padStart(2, '0')}`;
+    items.push({
+      id: `sched-pix-${p.id}`,
+      day,
+      dateText: `Data: ${fmtDate}`,
+      typeLabel: `Pix / Dinheiro (${p.category || 'Gasto'})`,
+      icon: '&#9889;',
+      iconClass: 'pix',
+      title: p.description,
+      amount: Number(p.amount || 0),
+      extraSub: p.recipient ? `Meio/Dest.: ${p.recipient}` : 'Pago à vista fora de cartão',
+      isUrgent: false,
+      isPaid: true,
+      targetTab: 'pix-view',
+      actionLabel: 'Ver Pix / Dinheiro'
+    });
+  });
+
+  summary.cardDebitExpenses.forEach((cd) => {
+    const card = state.cards.find((c) => c.id === cd.cardId);
+    const day = cd.date ? parseInt(cd.date.split('-')[2], 10) || 1 : 1;
+    const fmtDate = cd.date ? cd.date.split('-').reverse().join('/') : `Dia ${String(day).padStart(2, '0')}`;
+    items.push({
+      id: `sched-debit-${cd.id}`,
+      day,
+      dateText: `Data: ${fmtDate}`,
+      typeLabel: `Cartão Débito (${card ? card.name : 'Cartão'})`,
+      icon: '&#128179;',
+      iconClass: 'pix',
+      title: cd.description,
+      amount: Number(cd.amount || 0),
+      extraSub: `Categoria: ${cd.category || 'Outros'} • Débito à vista`,
+      isUrgent: false,
+      isPaid: true,
+      targetTab: 'cards-view',
+      actionLabel: 'Ver no Cartão'
+    });
+  });
+
+  // Ordena por data prevista de pagamento (dia do mês crescente: dia 1 -> dia 31),
+  // mantendo urgentes no topo em caso de empate no mesmo dia
+  items.sort((a, b) => {
+    if (a.day !== b.day) return a.day - b.day;
+    if (a.isUrgent !== b.isUrgent) return a.isUrgent ? -1 : 1;
+    return 0;
+  });
+
+  if (countBadge) {
+    const urgentCount = items.filter((i) => i.isUrgent).length;
+    countBadge.textContent =
+      urgentCount > 0 ? `${items.length} item(ns) • ${urgentCount} em alerta !` : `${items.length} item(ns) por ordem de data`;
+    countBadge.style.color = urgentCount > 0 ? '#fecdd3' : '';
+    countBadge.style.backgroundColor = urgentCount > 0 ? 'rgba(244, 63, 94, 0.28)' : '';
+  }
+
+  if (items.length === 0) {
+    grid.innerHTML = `
+      <div class="kpi-card schedule-empty-card" style="grid-column: 1 / -1">
+        <div class="kpi-top">
+          <span>Nenhum cartão, dívida, caixinha ou Pix registrado neste mês</span>
+          <div class="kpi-icon net">&#128197;</div>
+        </div>
+        <div class="kpi-sub">
+          <span>Assim que você registrar cartões, dívidas/acordos, caixinhas ou gastos no Pix/Dinheiro, novos containers aparecerão aqui em ordem de data de pagamento.</span>
+        </div>
+      </div>
+    `;
     return;
   }
 
-  panel.style.display = 'block';
-  panel.innerHTML = `
-    <div class="due-alerts-header">
-      <div class="due-alerts-title">
-        <span class="due-exclamation-badge">!</span>
-        <span>Atenção: Contas ou Caixinhas Próximas do Vencimento / Em Atraso (${alerts.length})</span>
-      </div>
-    </div>
-    <div class="due-alerts-grid">
-      ${alerts
-        .map(
-          (a) => `
-        <div class="due-alert-card">
-          <div class="due-alert-info">
-            <strong>&#9888;&#65039; ${a.title}</strong>
-            <span>${a.subtitle}</span>
-          </div>
-          <div style="display:flex; align-items:center; gap:10px">
-            <span class="due-alert-amount">${formatBRL(a.amount)}</span>
-            <button class="btn btn-danger btn-sm" data-goto="${a.targetTab}">${a.btnText}</button>
-          </div>
+  grid.innerHTML = items
+    .map(
+      (item) => `
+      <div class="kpi-card schedule-kpi-card ${item.isUrgent ? 'schedule-kpi-urgent' : ''}">
+        <div class="kpi-top">
+          <span class="schedule-card-type">
+            ${item.isUrgent ? '<span class="due-exclamation-badge" title="Próximo do vencimento ou em atraso!">!</span>' : ''}
+            ${item.typeLabel}
+          </span>
+          <div class="kpi-icon ${item.isUrgent ? 'urgent' : item.iconClass}">${item.icon}</div>
         </div>
-      `
-        )
-        .join('')}
-    </div>
-  `;
+        <div class="schedule-card-title" title="${item.title}">${item.title}</div>
+        <div class="kpi-value ${item.isUrgent ? 'schedule-value-urgent' : ''}">${formatBRL(item.amount)}</div>
+        <div class="schedule-card-date ${item.isUrgent ? 'schedule-date-urgent' : ''}">
+          &#128197; ${item.dateText}
+        </div>
+        <div class="kpi-sub schedule-card-footer">
+          <span>${item.extraSub}</span>
+          <button type="button" class="btn ${item.isUrgent ? 'btn-danger' : 'btn-secondary'} btn-sm" data-goto="${item.targetTab}">
+            ${item.actionLabel}
+          </button>
+        </div>
+      </div>
+    `
+    )
+    .join('');
 }
 
 // Render Overview & Recent Transactions
@@ -554,8 +658,8 @@ function renderOverview(summary) {
   const committedPct = totalIncome > 0 ? Math.round((totalExpenses / totalIncome) * 100) : 0;
   document.getElementById('kpi-net-sub').textContent = `${committedPct}% da renda comprometida`;
 
-  // Render Due Alerts Panel below KPIs
-  renderDueAlertsPanel(summary);
+  // Renderiza os novos containers ordenados por data prevista de pagamento (Cartões, Dívidas, Pix, Caixinhas)
+  renderDueScheduleCards(summary);
 
   // Render Pie Chart
   renderPieSVG(summary);

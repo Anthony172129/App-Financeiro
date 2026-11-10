@@ -1343,97 +1343,436 @@ body {
   align-items: center;
 }
 
-/* ===== Painel de Alertas de Vencimento / Atrasos (em vermelho abaixo dos KPIs) ===== */
-.due-alerts-panel {
-  background: linear-gradient(135deg, rgba(244, 63, 94, 0.16), rgba(15, 20, 25, 0.92));
-  border: 1px solid rgba(244, 63, 94, 0.45);
-  border-radius: var(--radius-lg);
-  padding: 18px 20px;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 24px -4px rgba(244, 63, 94, 0.2);
+/* ===== Novos Containers em Ordem de Vencimento / Pagamento (abaixo dos 4 KPIs no Ciclo do Dinheiro) ===== */
+.schedule-section {
+  margin-bottom: 28px;
 }
 
-.due-alerts-header {
+.schedule-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
   flex-wrap: wrap;
 }
 
-.due-alerts-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #fecdd3;
+.schedule-header-text h3 {
+  font-size: 1.08rem;
   font-weight: 700;
-  font-size: 0.98rem;
+  color: var(--text-primary);
+  letter-spacing: -0.015em;
+}
+
+.schedule-header-text p {
+  font-size: 0.84rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+.schedule-cards-grid {
+  grid-template-columns: repeat(auto-fill, minmax(265px, 1fr));
+}
+
+.schedule-kpi-card {
+  position: relative;
+  transition: var(--transition);
+}
+
+.schedule-card-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedule-card-title {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedule-card-date {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+}
+
+.schedule-card-footer {
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.kpi-icon.debt {
+  background-color: var(--coral-soft);
+  color: var(--coral);
+}
+
+.kpi-icon.urgent {
+  background-color: var(--coral);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.55);
+}
+
+/* Container em VERMELHO quando a conta/fatura/dívida/caixinha está perto de vencer ou em atraso */
+.schedule-kpi-urgent {
+  background: linear-gradient(145deg, rgba(244, 63, 94, 0.2), rgba(28, 37, 46, 0.96));
+  border-color: rgba(244, 63, 94, 0.65);
+  box-shadow: 0 8px 24px -4px rgba(244, 63, 94, 0.28);
+}
+
+.schedule-kpi-urgent .schedule-card-type {
+  color: #fecdd3;
+}
+
+.schedule-value-urgent {
+  color: var(--coral);
+}
+
+.schedule-date-urgent {
+  background-color: rgba(244, 63, 94, 0.22);
+  border-color: rgba(244, 63, 94, 0.5);
+  color: #ffe4e6;
 }
 
 .due-exclamation-badge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background-color: var(--coral);
   color: #fff;
   font-weight: 800;
-  font-size: 0.88rem;
+  font-size: 0.82rem;
   flex-shrink: 0;
   box-shadow: 0 0 10px rgba(244, 63, 94, 0.6);
-}
-
-.due-alerts-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-}
-
-.due-alert-card {
-  background-color: rgba(28, 37, 46, 0.9);
-  border: 1px solid rgba(244, 63, 94, 0.4);
-  border-left: 4px solid var(--coral);
-  border-radius: var(--radius-md);
-  padding: 12px 14px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.due-alert-info {
-  min-width: 0;
-  flex: 1;
-}
-
-.due-alert-info strong {
-  display: block;
-  color: #ffe4e6;
-  font-size: 0.88rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.due-alert-info span {
-  display: block;
-  color: #fda4af;
-  font-size: 0.76rem;
-  margin-top: 2px;
-}
-
-.due-alert-amount {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  color: var(--coral);
-  font-size: 0.92rem;
-  white-space: nowrap;
 }
 
 .row-due-danger td {
   background-color: rgba(244, 63, 94, 0.08) !important;
 }
+
+/* ===== Adaptação Completa para Celular e Tablets (Números, Textos, Botões e Containers Maiores e Legíveis) ===== */
+@media (max-width: 820px) {
+  html {
+    font-size: 16.5px;
+  }
+
+  .app-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: static;
+    height: auto;
+    padding: 18px 16px;
+    gap: 14px;
+  }
+
+  .brand {
+    padding: 0 4px 16px;
+    margin-bottom: 14px;
+  }
+
+  .brand-logo {
+    width: 44px;
+    height: 44px;
+    font-size: 1.3rem;
+  }
+
+  .brand-text h1 {
+    font-size: 1.2rem;
+  }
+
+  .brand-text span {
+    font-size: 0.85rem;
+  }
+
+  .user-profile-badge {
+    padding: 12px 14px;
+    margin-bottom: 14px;
+  }
+
+  .user-profile-name {
+    font-size: 1rem;
+  }
+
+  .user-logout-btn {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+  }
+
+  /* Menu de abas em grade de 2 colunas no celular para botões grandes e fáceis de tocar */
+  .nav-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    overflow-x: visible;
+    padding-bottom: 0;
+  }
+
+  .nav-menu li:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+
+  .nav-btn {
+    width: 100%;
+    min-height: 50px;
+    padding: 13px 14px;
+    font-size: 0.96rem;
+    white-space: normal;
+    line-height: 1.25;
+  }
+
+  .nav-btn svg {
+    width: 22px;
+    height: 22px;
+  }
+
+  .nav-badge {
+    font-size: 0.82rem;
+    padding: 3px 9px;
+  }
+
+  .sidebar-footer {
+    padding-top: 14px;
+    gap: 10px;
+  }
+
+  .sync-status-btn {
+    padding: 12px 14px;
+  }
+
+  .sync-status-label {
+    font-size: 0.76rem;
+  }
+
+  #firebase-status-text {
+    font-size: 0.86rem;
+  }
+
+  .main-content {
+    padding: 20px 14px 56px;
+  }
+
+  .topbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+    margin-bottom: 22px;
+  }
+
+  .page-header h2 {
+    font-size: 1.5rem;
+  }
+
+  .page-header p {
+    font-size: 0.95rem;
+    line-height: 1.45;
+  }
+
+  .topbar-controls {
+    width: 100%;
+  }
+
+  .month-picker {
+    width: 100%;
+    justify-content: space-between;
+    padding: 6px 8px;
+  }
+
+  .month-picker button {
+    width: 42px;
+    height: 42px;
+    font-size: 1rem;
+  }
+
+  .month-label {
+    font-size: 1.04rem;
+    font-weight: 700;
+  }
+
+  /* KPI Cards e Containers de Vencimento no celular */
+  .kpi-grid,
+  .schedule-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .kpi-card {
+    padding: 20px 18px;
+    gap: 12px;
+  }
+
+  .kpi-top {
+    font-size: 0.96rem;
+  }
+
+  .kpi-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 1.15rem;
+  }
+
+  .kpi-value {
+    font-size: 1.85rem;
+  }
+
+  .kpi-sub {
+    font-size: 0.9rem;
+  }
+
+  .schedule-header-text h3 {
+    font-size: 1.2rem;
+  }
+
+  .schedule-header-text p {
+    font-size: 0.92rem;
+  }
+
+  .schedule-card-title {
+    font-size: 1.12rem;
+  }
+
+  .schedule-card-date {
+    font-size: 0.9rem;
+    padding: 6px 12px;
+  }
+
+  /* Painéis, Formulários, Inputs e Botões maiores no celular */
+  .panel {
+    padding: 20px 16px;
+  }
+
+  .panel-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .panel-title h3 {
+    font-size: 1.2rem;
+  }
+
+  .panel-title p {
+    font-size: 0.92rem;
+  }
+
+  .segmented-control {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .segmented-control button {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+
+  .form-group label,
+  .auth-form .form-group label {
+    font-size: 0.94rem;
+  }
+
+  .form-control {
+    font-size: 1rem;
+    padding: 13px 14px;
+    min-height: 48px;
+  }
+
+  .btn {
+    font-size: 1rem;
+    padding: 13px 18px;
+    min-height: 48px;
+  }
+
+  .btn-sm {
+    font-size: 0.92rem;
+    padding: 10px 14px;
+    min-height: 42px;
+  }
+
+  /* Gráfico de pizza e legendas */
+  .pie-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .pie-stage {
+    width: 240px;
+    height: 240px;
+  }
+
+  .pie-center-amount {
+    font-size: 1.35rem;
+  }
+
+  .pie-center-sub {
+    font-size: 0.86rem;
+  }
+
+  .legend-name {
+    font-size: 0.95rem;
+  }
+
+  .legend-values {
+    font-size: 0.94rem;
+  }
+
+  .cycle-stat-box {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 16px;
+  }
+
+  .cycle-stat-box .meta span {
+    font-size: 0.9rem;
+  }
+
+  .cycle-stat-box .meta strong {
+    font-size: 1.25rem;
+  }
+
+  .cycle-stat-box .btn {
+    width: 100%;
+  }
+
+  /* Cartões e Tabelas no celular */
+  .cards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .data-table {
+    font-size: 0.95rem;
+  }
+
+  .data-table th {
+    font-size: 0.84rem;
+    padding: 12px;
+  }
+
+  .data-table td {
+    padding: 14px 12px;
+  }
+
+  .tag {
+    font-size: 0.84rem;
+    padding: 4px 10px;
+  }
+}
+
 
