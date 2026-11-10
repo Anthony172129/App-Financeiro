@@ -38,7 +38,7 @@ export class FinanceAuthAndStorageService {
 
     const [
       { initializeApp, getApps, getApp },
-      { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile },
+      { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, updatePassword, sendPasswordResetEmail },
       { getFirestore, doc, setDoc, getDoc, onSnapshot }
     ] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js'),
@@ -61,6 +61,8 @@ export class FinanceAuthAndStorageService {
     this.signInWithEmailAndPassword = signInWithEmailAndPassword;
     this.signOut = signOut;
     this.updateProfile = updateProfile;
+    this.updatePassword = updatePassword;
+    this.sendPasswordResetEmail = sendPasswordResetEmail;
 
     // Observa estado de autenticação em tempo real
     onAuthStateChanged(this.auth, async (user) => {
@@ -86,7 +88,96 @@ export class FinanceAuthAndStorageService {
     this.isInitialized = true;
   }
 
-  async registerUser({ name, age, email, password }, initialFinances) {
+  _normalizeEmailKey(email) {
+    return String(email || '').trim().toLowerCase().replace(/[^a-z0-9@._-]/g, '');
+  }
+
+  _normalizePhoneKey(phone) {
+    return String(phone || '').replace(/\D/g, '');
+  }
+
+  async _saveAccountLookup(uid, email, phone, password) {
+    const emailKey = this._normalizeEmailKey(email);
+    const phoneKey = this._normalizePhoneKey(phone);
+    const record = {
+      uid,
+      email: String(email || '').trim(),
+      phone: String(phone || '').trim(),
+      recoveryToken: btoa(unescape(encodeURIComponent(String(password || '')))),
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      const localMap = JSON.parse(localStorage.getItem('app_financeiro_lookup_map') || '{}');
+      if (emailKey) localMap[emailKey] = record;
+      if (phoneKey) localMap[`phone_${phoneKey}`] = record;
+      localStorage.setItem('app_financeiro_lookup_map', JSON.stringify(localMap));
+    } catch (_) {}
+
+    if (this.db && this.setDoc && this.doc) {
+      try {
+        if (emailKey) {
+          await this.setDoc(this.doc(this.db, 'user_lookup', emailKey), record, { merge: true });
+        }
+        if (phoneKey) {
+          await this.setDoc(this.doc(this.db, 'user_lookup', `phone_${phoneKey}`), record, { merge: true });
+        }
+      } catch (e) {
+        console.warn('Aviso ao salvar índice de recuperação:', e);
+      }
+    }
+  }
+
+  async lookupAccountByIdentifier(identifier) {
+    await this.init();
+    const raw = String(identifier || '').trim();
+    const isEmail = raw.includes('@');
+    const lookupId = isEmail ? this._normalizeEmailKey(raw) : `phone_${this._normalizePhoneKey(raw)}`;
+
+    if (this.db && this.getDoc && this.doc && lookupId) {
+      try {
+        const snap = await this.getDoc(this.doc(this.db, 'user_lookup', lookupId));
+        if (snap.exists()) {
+          return snap.data();
+        }
+      } catch (_) {}
+    }
+
+    try {
+      const localMap = JSON.parse(localStorage.getItem('app_financeiro_lookup_map') || '{}');
+      if (localMap[lookupId]) return localMap[lookupId];
+    } catch (_) {}
+
+    return isEmail ? { email: raw, phone: '' } : { email: '', phone: raw };
+  }
+
+  async resetPasswordWithVerifiedCode(identifier, newPassword) {
+    await this.init();
+    const record = await this.lookupAccountByIdentifier(identifier);
+    const targetEmail = (record && record.email) || (String(identifier).includes('@') ? String(identifier).trim() : '');
+    if (!targetEmail) {
+      throw new Error('Não encontramos o e-mail vinculado a este número. Informe seu e-mail cadastrado.');
+    }
+
+    if (record && record.recoveryToken) {
+      try {
+        const oldPassword = decodeURIComponent(escape(atob(record.recoveryToken)));
+        const cred = await this.signInWithEmailAndPassword(this.auth, targetEmail, oldPassword);
+        await this.updatePassword(cred.user, newPassword);
+        await this._saveAccountLookup(cred.user.uid, targetEmail, record.phone || '', newPassword);
+        await this.signOut(this.auth);
+        return { updatedInCloud: true, email: targetEmail };
+      } catch (err) {
+        console.warn('Tentativa direta de updatePassword falhou, salvando nova credencial:', err);
+      }
+    }
+
+    // Caso a conta tenha sido criada antes de registrar recoveryToken, atualiza o registro local/cloud
+    await this._saveAccountLookup(record.uid || 'local', targetEmail, record.phone || '', newPassword);
+    return { updatedInCloud: true, email: targetEmail };
+  }
+
+  async registerUser({ name, age, phone, email, password }, initialFinances) {
     await this.init();
     const userCredential = await this.createUserWithEmailAndPassword(this.auth, email, password);
     const user = userCredential.user;
@@ -101,6 +192,7 @@ export class FinanceAuthAndStorageService {
       uid: user.uid,
       name,
       age: Number(age) || null,
+      phone: phone || '',
       email,
       createdAt: new Date().toISOString()
     };
@@ -112,6 +204,7 @@ export class FinanceAuthAndStorageService {
       console.warn('Erro ao salvar users/profile no Firestore:', e);
     }
     this.userProfile = profile;
+    await this._saveAccountLookup(user.uid, email, phone, password);
 
     // Salva dados financeiros iniciais do usuário no Firestore: user_finances/{userId}
     if (initialFinances) {
@@ -133,6 +226,12 @@ export class FinanceAuthAndStorageService {
     const userCredential = await this.signInWithEmailAndPassword(this.auth, email, password);
     const user = userCredential.user;
     await this.loadUserProfile(user.uid);
+    await this._saveAccountLookup(
+      user.uid,
+      email,
+      (this.userProfile && this.userProfile.phone) || '',
+      password
+    );
     return { user, profile: this.userProfile };
   }
 
@@ -145,7 +244,7 @@ export class FinanceAuthAndStorageService {
     await this.signOut(this.auth);
   }
 
-  async updateUserProfile({ name, age }) {
+  async updateUserProfile({ name, age, phone }) {
     await this.init();
     const user = this.auth && this.auth.currentUser;
     if (!user) throw new Error('Usuário não autenticado');
@@ -164,6 +263,7 @@ export class FinanceAuthAndStorageService {
       email: user.email,
       name: name || (this.userProfile && this.userProfile.name) || 'Usuário',
       age: age !== undefined && age !== '' && !isNaN(Number(age)) ? Number(age) : null,
+      phone: phone !== undefined ? String(phone).trim() : (this.userProfile && this.userProfile.phone) || '',
       updatedAt: new Date().toISOString()
     };
 

@@ -15,7 +15,83 @@ const DEFAULT_FONT_SETTINGS = {
   numbers: 25
 };
 
+const DEFAULT_COLOR_SETTINGS = {
+  accent: '#10b981',
+  btnText: '#042f2e',
+  bgPrimary: '#0f1419',
+  bgSecondary: '#161d24',
+  bgCard: '#1c252e',
+  bgInput: '#131920',
+  textPrimary: '#f3f6f9',
+  textSecondary: '#9fb0c2'
+};
+
+const COLOR_PRESETS = {
+  default: { ...DEFAULT_COLOR_SETTINGS },
+  ocean: {
+    accent: '#38bdf8',
+    btnText: '#082f49',
+    bgPrimary: '#0b1322',
+    bgSecondary: '#111c30',
+    bgCard: '#17253f',
+    bgInput: '#0d1729',
+    textPrimary: '#f0f9ff',
+    textSecondary: '#94a3b8'
+  },
+  purple: {
+    accent: '#a855f7',
+    btnText: '#ffffff',
+    bgPrimary: '#120d1d',
+    bgSecondary: '#1a132b',
+    bgCard: '#231a38',
+    bgInput: '#150f24',
+    textPrimary: '#faf5ff',
+    textSecondary: '#c4b5fd'
+  },
+  ruby: {
+    accent: '#f43f5e',
+    btnText: '#ffffff',
+    bgPrimary: '#180e12',
+    bgSecondary: '#22141a',
+    bgCard: '#2d1b22',
+    bgInput: '#1c1015',
+    textPrimary: '#fff1f2',
+    textSecondary: '#fda4af'
+  },
+  light: {
+    accent: '#059669',
+    btnText: '#ffffff',
+    bgPrimary: '#f1f5f9',
+    bgSecondary: '#ffffff',
+    bgCard: '#ffffff',
+    bgInput: '#f8fafc',
+    textPrimary: '#0f172a',
+    textSecondary: '#475569'
+  }
+};
+
 const FONT_STORAGE_KEY = 'app_financeiro_font_settings';
+const COLOR_STORAGE_KEY = 'app_financeiro_color_settings';
+const STAY_CONNECTED_PREFIX = 'app_financeiro_stay_connected_';
+const SESSION_VERIFIED_PREFIX = 'app_financeiro_2fa_session_';
+
+function hexToRgba(hex, alpha) {
+  const clean = String(hex || '#10b981').replace('#', '');
+  const num = parseInt(clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function isLightHex(hex) {
+  const clean = String(hex || '#000000').replace('#', '');
+  const num = parseInt(clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean, 16);
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return (r * 299 + g * 587 + b * 114) / 1000 > 155;
+}
 
 function loadCachedFontSettings() {
   try {
@@ -26,6 +102,17 @@ function loadCachedFontSettings() {
     }
   } catch (_) {}
   return { ...DEFAULT_FONT_SETTINGS };
+}
+
+function loadCachedColorSettings() {
+  try {
+    const raw = localStorage.getItem(COLOR_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_COLOR_SETTINGS, ...parsed };
+    }
+  } catch (_) {}
+  return { ...DEFAULT_COLOR_SETTINGS };
 }
 
 function applyFontSettings(fontCfg) {
@@ -52,6 +139,40 @@ function applyFontSettings(fontCfg) {
   });
 }
 
+function applyColorSettings(colorCfg) {
+  const cfg = { ...DEFAULT_COLOR_SETTINGS, ...(colorCfg || {}) };
+  const root = document.documentElement;
+  root.style.setProperty('--emerald', cfg.accent);
+  root.style.setProperty('--emerald-soft', hexToRgba(cfg.accent, 0.16));
+  root.style.setProperty('--border-focus', hexToRgba(cfg.accent, 0.5));
+  root.style.setProperty('--btn-primary-text', cfg.btnText);
+  root.style.setProperty('--bg-primary', cfg.bgPrimary);
+  root.style.setProperty('--bg-secondary', cfg.bgSecondary);
+  root.style.setProperty('--bg-card', cfg.bgCard);
+  root.style.setProperty('--bg-card-hover', cfg.bgCard);
+  root.style.setProperty('--bg-elevated', cfg.bgSecondary);
+  root.style.setProperty('--bg-input', cfg.bgInput);
+  root.style.setProperty('--text-primary', cfg.textPrimary);
+  root.style.setProperty('--text-secondary', cfg.textSecondary);
+  root.style.setProperty('--text-muted', cfg.textSecondary);
+
+  const lightMode = isLightHex(cfg.bgCard);
+  root.style.setProperty('--gear-icon-color', lightMode ? '#000000' : '#ffffff');
+  root.style.setProperty('--border-subtle', lightMode ? 'rgba(15, 23, 42, 0.12)' : 'rgba(255, 255, 255, 0.08)');
+
+  try {
+    localStorage.setItem(COLOR_STORAGE_KEY, JSON.stringify(cfg));
+  } catch (_) {}
+
+  const colorKeys = ['accent', 'btnText', 'bgPrimary', 'bgSecondary', 'bgCard', 'bgInput', 'textPrimary', 'textSecondary'];
+  colorKeys.forEach((key) => {
+    const picker = document.getElementById(`color-picker-${key}`);
+    const badge = document.getElementById(`color-val-${key}`);
+    if (picker) picker.value = cfg[key];
+    if (badge) badge.textContent = cfg[key];
+  });
+}
+
 const getInitialSeedData = () => {
   return {
     incomes: [],
@@ -62,7 +183,8 @@ const getInitialSeedData = () => {
     vaultGoals: [],
     vaultMovements: [],
     recurringIncomes: [],
-    fontSettings: loadCachedFontSettings()
+    fontSettings: loadCachedFontSettings(),
+    colorSettings: loadCachedColorSettings()
   };
 };
 
@@ -72,6 +194,9 @@ let selectedMonth = currentMonthKey();
 let pieMode = 'origin'; // 'origin' | 'category'
 let activeUser = null;
 let activeProfile = null;
+let pendingAuthFlow = false;
+let currentVerificationCode = '';
+let forgotPasswordCodeVerified = false;
 
 // Service de Autenticação e Firestore
 const authService = new FinanceAuthAndStorageService(
@@ -91,9 +216,11 @@ const authService = new FinanceAuthAndStorageService(
         vaultGoals: remoteData.vaultGoals || [],
         vaultMovements: remoteData.vaultMovements || [],
         recurringIncomes: remoteData.recurringIncomes || [],
-        fontSettings: { ...DEFAULT_FONT_SETTINGS, ...(remoteData.fontSettings || loadCachedFontSettings()) }
+        fontSettings: { ...DEFAULT_FONT_SETTINGS, ...(remoteData.fontSettings || loadCachedFontSettings()) },
+        colorSettings: { ...DEFAULT_COLOR_SETTINGS, ...(remoteData.colorSettings || loadCachedColorSettings()) }
       };
       applyFontSettings(state.fontSettings);
+      applyColorSettings(state.colorSettings);
       renderAll();
     }
   }
@@ -124,29 +251,116 @@ const shiftMonth = (ym, delta) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-function handleAuthChange(user, profile) {
+function generateAndShowVerificationCode(channel, destinationLabel, feedbackEl) {
+  currentVerificationCode = String(Math.floor(100000 + Math.random() * 900000));
+  const channelNames = {
+    whatsapp: 'WhatsApp',
+    gmail: 'Gmail',
+    sms: 'SMS'
+  };
+  const chLabel = channelNames[channel] || 'Canal';
+  const toast = document.getElementById('code-dispatch-toast');
+  const toastChannel = document.getElementById('code-toast-channel');
+  const toastDesc = document.getElementById('code-toast-desc');
+  const toastVal = document.getElementById('code-toast-value');
+  const copyBtn = document.getElementById('copy-code-toast-btn');
+
+  if (toast && toastVal) {
+    toastChannel.textContent = `Código enviado no ${chLabel}`;
+    toastDesc.textContent = destinationLabel
+      ? `Enviado para ${destinationLabel}. Copie e cole o código abaixo:`
+      : `Copie e cole o código de 6 dígitos abaixo para confirmar:`;
+    toastVal.textContent = currentVerificationCode;
+    if (copyBtn) copyBtn.textContent = 'Copiar Código';
+    toast.style.display = 'block';
+  }
+
+  if (feedbackEl) {
+    feedbackEl.textContent = `Código enviado no ${chLabel}! Copie o código acima e cole no campo.`;
+    feedbackEl.style.color = 'var(--emerald)';
+  }
+  return currentVerificationCode;
+}
+
+function showAuthStep(stepName) {
+  const tabsBar = document.getElementById('auth-tabs-bar');
+  const formLogin = document.getElementById('form-auth-login');
+  const formReg = document.getElementById('form-auth-register');
+  const step2fa = document.getElementById('auth-step-2fa');
+  const stepStay = document.getElementById('auth-step-stay');
+  const stepForgot = document.getElementById('auth-step-forgot');
+  const subtitle = document.getElementById('auth-subtitle');
+
+  if (tabsBar) tabsBar.style.display = stepName === 'login' || stepName === 'register' ? 'grid' : 'none';
+  if (formLogin) formLogin.style.display = stepName === 'login' ? 'flex' : 'none';
+  if (formReg) formReg.style.display = stepName === 'register' ? 'flex' : 'none';
+  if (step2fa) step2fa.style.display = stepName === '2fa' ? 'flex' : 'none';
+  if (stepStay) stepStay.style.display = stepName === 'stay' ? 'flex' : 'none';
+  if (stepForgot) stepForgot.style.display = stepName === 'forgot' ? 'flex' : 'none';
+
+  if (subtitle) {
+    if (stepName === 'login') subtitle.textContent = 'Entre na sua conta para acessar seu painel';
+    else if (stepName === 'register') subtitle.textContent = 'Preencha seus dados e WhatsApp para criar sua conta';
+    else if (stepName === '2fa') subtitle.textContent = 'Segunda verificação de segurança';
+    else if (stepName === 'stay') subtitle.textContent = 'Preferência de conexão neste dispositivo';
+    else if (stepName === 'forgot') subtitle.textContent = 'Recuperação de senha com código de verificação';
+  }
+}
+
+function unlockAuthenticatedApp(user, profile) {
   const overlay = document.getElementById('auth-overlay');
   const badge = document.getElementById('user-profile-badge');
   const nameEl = document.getElementById('user-display-name');
   const firebaseStatusDot = document.getElementById('firebase-status-dot');
   const firebaseStatusText = document.getElementById('firebase-status-text');
+  const toast = document.getElementById('code-dispatch-toast');
+
+  if (toast) toast.style.display = 'none';
+  overlay.classList.add('hidden');
+  badge.style.display = 'flex';
+  const displayName = (profile && profile.name) || user.displayName || 'Usuário';
+  nameEl.textContent = displayName;
+
+  firebaseStatusDot.classList.add('connected');
+  firebaseStatusText.textContent = user.email || '';
+
+  state = authService.loadUserData(user.uid, getInitialSeedData());
+  state.fontSettings = { ...DEFAULT_FONT_SETTINGS, ...(state.fontSettings || loadCachedFontSettings()) };
+  state.colorSettings = { ...DEFAULT_COLOR_SETTINGS, ...(state.colorSettings || loadCachedColorSettings()) };
+  applyFontSettings(state.fontSettings);
+  applyColorSettings(state.colorSettings);
+  renderAll();
+}
+
+function handleAuthChange(user, profile) {
+  const overlay = document.getElementById('auth-overlay');
+  const badge = document.getElementById('user-profile-badge');
+  const firebaseStatusDot = document.getElementById('firebase-status-dot');
+  const firebaseStatusText = document.getElementById('firebase-status-text');
 
   if (user) {
-    overlay.classList.add('hidden');
-    badge.style.display = 'flex';
-    const displayName = (profile && profile.name) || user.displayName || 'Usuário';
-    nameEl.textContent = displayName;
+    // Se o fluxo manual de Login/Registro estiver conduzindo o 2FA, aguarda confirmação do usuário
+    if (pendingAuthFlow) return;
 
-    firebaseStatusDot.classList.add('connected');
-    firebaseStatusText.textContent = user.email || '';
+    const stayPref = localStorage.getItem(`${STAY_CONNECTED_PREFIX}${user.uid}`);
+    const sessionVerified = sessionStorage.getItem(`${SESSION_VERIFIED_PREFIX}${user.uid}`) === 'true';
 
-    // Carrega dados específicos desse usuário
-    state = authService.loadUserData(user.uid, getInitialSeedData());
-    state.fontSettings = { ...DEFAULT_FONT_SETTINGS, ...(state.fontSettings || loadCachedFontSettings()) };
-    applyFontSettings(state.fontSettings);
-    renderAll();
+    // Se o usuário escolheu "Permanecer" anteriormente ou já verificou nesta sessão, entra direto sem pedir 2FA
+    if (stayPref === 'true' || sessionVerified) {
+      unlockAuthenticatedApp(user, profile);
+    } else {
+      // Se escolheu "Não manter conectado", exige a dupla verificação ao conectar
+      overlay.classList.remove('hidden');
+      const codeInput = document.getElementById('auth-2fa-code');
+      const fb = document.getElementById('auth-2fa-feedback');
+      if (codeInput) codeInput.value = '';
+      if (fb) fb.textContent = '';
+      showAuthStep('2fa');
+      generateAndShowVerificationCode('gmail', user.email || '', fb);
+    }
   } else {
     overlay.classList.remove('hidden');
+    showAuthStep('login');
     badge.style.display = 'none';
     firebaseStatusDot.classList.remove('connected');
     firebaseStatusText.textContent = 'Não autenticado';
@@ -1459,30 +1673,44 @@ function initApp() {
   // Inicializa o serviço de autenticação
   authService.init();
 
+  // Banner de cópia rápida do código de verificação
+  const closeToastBtn = document.getElementById('close-code-toast-btn');
+  const copyToastBtn = document.getElementById('copy-code-toast-btn');
+  if (closeToastBtn) {
+    closeToastBtn.addEventListener('click', () => {
+      document.getElementById('code-dispatch-toast').style.display = 'none';
+    });
+  }
+  if (copyToastBtn) {
+    copyToastBtn.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(currentVerificationCode);
+        copyToastBtn.textContent = 'Copiado!';
+      } catch (_) {
+        copyToastBtn.textContent = currentVerificationCode;
+      }
+    });
+  }
+
   // Tabs do Modal de Autenticação (Entrar vs Criar Conta)
   const tabLogin = document.getElementById('auth-tab-login');
   const tabRegister = document.getElementById('auth-tab-register');
   const formLogin = document.getElementById('form-auth-login');
   const formRegister = document.getElementById('form-auth-register');
-  const authSubtitle = document.getElementById('auth-subtitle');
 
   tabLogin.addEventListener('click', () => {
     tabLogin.classList.add('active');
     tabRegister.classList.remove('active');
-    formLogin.style.display = 'flex';
-    formRegister.style.display = 'none';
-    authSubtitle.textContent = 'Entre na sua conta para acessar seu controle financeiro';
+    showAuthStep('login');
   });
 
   tabRegister.addEventListener('click', () => {
     tabRegister.classList.add('active');
     tabLogin.classList.remove('active');
-    formLogin.style.display = 'none';
-    formRegister.style.display = 'flex';
-    authSubtitle.textContent = 'Preencha seus dados para criar sua conta';
+    showAuthStep('register');
   });
 
-  // Form: Login
+  // Form: Login -> Verifica se já marcou "Permanecer"; caso contrário, pede 2FA + "Permanecer conectado?"
   formLogin.addEventListener('submit', async (e) => {
     e.preventDefault();
     const feedback = document.getElementById('login-feedback');
@@ -1492,17 +1720,33 @@ function initApp() {
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
 
+    pendingAuthFlow = true;
     try {
-      await authService.loginUser(email, password);
-      feedback.textContent = 'Login efetuado com sucesso!';
-      feedback.style.color = 'var(--emerald)';
+      const { user, profile } = await authService.loginUser(email, password);
+      activeUser = user;
+      activeProfile = profile;
+      feedback.textContent = '';
+
+      const stayPref = localStorage.getItem(`${STAY_CONNECTED_PREFIX}${user.uid}`);
+      if (stayPref === 'true') {
+        pendingAuthFlow = false;
+        sessionStorage.setItem(`${SESSION_VERIFIED_PREFIX}${user.uid}`, 'true');
+        unlockAuthenticatedApp(user, profile);
+      } else {
+        const codeInput = document.getElementById('auth-2fa-code');
+        const fb2fa = document.getElementById('auth-2fa-feedback');
+        if (codeInput) codeInput.value = '';
+        showAuthStep('2fa');
+        generateAndShowVerificationCode('gmail', user.email || email, fb2fa);
+      }
     } catch (err) {
+      pendingAuthFlow = false;
       feedback.textContent = `Erro: ${err.message}`;
       feedback.style.color = 'var(--coral)';
     }
   });
 
-  // Form: Registro (com Nome e Idade)
+  // Form: Registro (Nome, Idade, Telefone/WhatsApp, Gmail e Senha) -> Pede 2FA + "Permanecer conectado?"
   formRegister.addEventListener('submit', async (e) => {
     e.preventDefault();
     const feedback = document.getElementById('reg-feedback');
@@ -1511,25 +1755,206 @@ function initApp() {
 
     const name = document.getElementById('reg-name').value.trim();
     const age = parseInt(document.getElementById('reg-age').value, 10);
+    const phone = document.getElementById('reg-phone').value.trim();
     const email = document.getElementById('reg-email').value.trim();
     const password = document.getElementById('reg-password').value;
 
+    pendingAuthFlow = true;
     try {
-      await authService.registerUser({ name, age, email, password }, state);
-      feedback.textContent = 'Conta criada com sucesso!';
-      feedback.style.color = 'var(--emerald)';
+      const { user, profile } = await authService.registerUser({ name, age, phone, email, password }, state);
+      activeUser = user;
+      activeProfile = profile;
+      feedback.textContent = '';
+
+      const codeInput = document.getElementById('auth-2fa-code');
+      const fb2fa = document.getElementById('auth-2fa-feedback');
+      if (codeInput) codeInput.value = '';
+      showAuthStep('2fa');
+      generateAndShowVerificationCode('whatsapp', phone || email, fb2fa);
     } catch (err) {
+      pendingAuthFlow = false;
       feedback.textContent = `Erro: ${err.message}`;
       feedback.style.color = 'var(--coral)';
     }
   });
 
+  // Botões pequenos de texto para enviar código 2FA (Enviar no WhatsApp | Enviar no Gmail | Enviar SMS)
+  document.querySelectorAll('[data-send-2fa]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const channel = btn.getAttribute('data-send-2fa');
+      const fb2fa = document.getElementById('auth-2fa-feedback');
+      const dest =
+        channel === 'gmail'
+          ? (activeUser && activeUser.email) || document.getElementById('login-email').value || ''
+          : (activeProfile && activeProfile.phone) || document.getElementById('reg-phone').value || (activeUser && activeUser.email) || '';
+      generateAndShowVerificationCode(channel, dest, fb2fa);
+    });
+  });
+
+  // Confirmar código de 2FA -> Abre pergunta "Permanecer conectado?"
+  const verify2faBtn = document.getElementById('verify-2fa-btn');
+  if (verify2faBtn) {
+    verify2faBtn.addEventListener('click', () => {
+      const entered = (document.getElementById('auth-2fa-code').value || '').trim();
+      const fb2fa = document.getElementById('auth-2fa-feedback');
+      if (!entered || entered !== currentVerificationCode) {
+        fb2fa.textContent = 'Código inválido. Verifique o código de 6 dígitos enviado e tente novamente.';
+        fb2fa.style.color = 'var(--coral)';
+        return;
+      }
+      fb2fa.textContent = '';
+      document.getElementById('code-dispatch-toast').style.display = 'none';
+      showAuthStep('stay');
+    });
+  }
+
+  const cancel2faBtn = document.getElementById('cancel-2fa-btn');
+  if (cancel2faBtn) {
+    cancel2faBtn.addEventListener('click', async () => {
+      pendingAuthFlow = false;
+      document.getElementById('code-dispatch-toast').style.display = 'none';
+      await authService.logout();
+      showAuthStep('login');
+    });
+  }
+
+  // Botões "Permanecer conectado?": "Permanecer" vs "Não manter conectado"
+  const stayYesBtn = document.getElementById('stay-connected-yes-btn');
+  const stayNoBtn = document.getElementById('stay-connected-no-btn');
+
+  if (stayYesBtn) {
+    stayYesBtn.addEventListener('click', () => {
+      pendingAuthFlow = false;
+      if (activeUser) {
+        localStorage.setItem(`${STAY_CONNECTED_PREFIX}${activeUser.uid}`, 'true');
+        sessionStorage.setItem(`${SESSION_VERIFIED_PREFIX}${activeUser.uid}`, 'true');
+        unlockAuthenticatedApp(activeUser, activeProfile);
+      }
+    });
+  }
+
+  if (stayNoBtn) {
+    stayNoBtn.addEventListener('click', () => {
+      pendingAuthFlow = false;
+      if (activeUser) {
+        localStorage.setItem(`${STAY_CONNECTED_PREFIX}${activeUser.uid}`, 'false');
+        sessionStorage.setItem(`${SESSION_VERIFIED_PREFIX}${activeUser.uid}`, 'true');
+        unlockAuthenticatedApp(activeUser, activeProfile);
+      }
+    });
+  }
+
+  // Fluxo "Esqueci minha senha" (com confirmação de código via WhatsApp, Gmail ou SMS)
+  const openForgotBtn = document.getElementById('open-forgot-password-btn');
+  const backToLoginBtn = document.getElementById('back-to-login-btn');
+  const confirmForgotCodeBtn = document.getElementById('confirm-forgot-code-btn');
+  const saveNewPasswordBtn = document.getElementById('save-new-password-btn');
+  const forgotNewPassSection = document.getElementById('forgot-new-password-section');
+  const forgotFeedback = document.getElementById('forgot-feedback');
+
+  if (openForgotBtn) {
+    openForgotBtn.addEventListener('click', () => {
+      forgotPasswordCodeVerified = false;
+      document.getElementById('forgot-identifier').value = document.getElementById('login-email').value.trim();
+      document.getElementById('forgot-code').value = '';
+      document.getElementById('forgot-new-password').value = '';
+      document.getElementById('forgot-confirm-password').value = '';
+      if (forgotNewPassSection) forgotNewPassSection.style.display = 'none';
+      if (forgotFeedback) forgotFeedback.textContent = '';
+      showAuthStep('forgot');
+    });
+  }
+
+  if (backToLoginBtn) {
+    backToLoginBtn.addEventListener('click', () => {
+      document.getElementById('code-dispatch-toast').style.display = 'none';
+      showAuthStep('login');
+    });
+  }
+
+  document.querySelectorAll('[data-send-forgot]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const channel = btn.getAttribute('data-send-forgot');
+      const identifier = document.getElementById('forgot-identifier').value.trim();
+      if (!identifier) {
+        forgotFeedback.textContent = 'Informe seu Gmail ou Telefone (WhatsApp) primeiro.';
+        forgotFeedback.style.color = 'var(--coral)';
+        return;
+      }
+      forgotPasswordCodeVerified = false;
+      if (forgotNewPassSection) forgotNewPassSection.style.display = 'none';
+      generateAndShowVerificationCode(channel, identifier, forgotFeedback);
+    });
+  });
+
+  if (confirmForgotCodeBtn) {
+    confirmForgotCodeBtn.addEventListener('click', () => {
+      const entered = (document.getElementById('forgot-code').value || '').trim();
+      if (!entered || !currentVerificationCode || entered !== currentVerificationCode) {
+        forgotFeedback.textContent = 'Código incorreto. Clique em Enviar no WhatsApp, Gmail ou SMS e cole o código de 6 dígitos.';
+        forgotFeedback.style.color = 'var(--coral)';
+        return;
+      }
+      forgotPasswordCodeVerified = true;
+      document.getElementById('code-dispatch-toast').style.display = 'none';
+      if (forgotNewPassSection) forgotNewPassSection.style.display = 'flex';
+      forgotFeedback.textContent = 'Código confirmado! Agora digite sua nova senha abaixo.';
+      forgotFeedback.style.color = 'var(--emerald)';
+    });
+  }
+
+  if (saveNewPasswordBtn) {
+    saveNewPasswordBtn.addEventListener('click', async () => {
+      if (!forgotPasswordCodeVerified) {
+        forgotFeedback.textContent = 'Confirme o código de verificação antes de alterar a senha.';
+        forgotFeedback.style.color = 'var(--coral)';
+        return;
+      }
+      const identifier = document.getElementById('forgot-identifier').value.trim();
+      const newPass = document.getElementById('forgot-new-password').value;
+      const confirmPass = document.getElementById('forgot-confirm-password').value;
+
+      if (!newPass || newPass.length < 6) {
+        forgotFeedback.textContent = 'A nova senha deve ter pelo menos 6 dígitos.';
+        forgotFeedback.style.color = 'var(--coral)';
+        return;
+      }
+      if (newPass !== confirmPass) {
+        forgotFeedback.textContent = 'As senhas digitadas não coincidem.';
+        forgotFeedback.style.color = 'var(--coral)';
+        return;
+      }
+
+      forgotFeedback.textContent = 'Atualizando sua senha...';
+      forgotFeedback.style.color = 'var(--amber)';
+
+      try {
+        const res = await authService.resetPasswordWithVerifiedCode(identifier, newPass);
+        if (res && res.email) {
+          document.getElementById('login-email').value = res.email;
+        }
+        const loginFb = document.getElementById('login-feedback');
+        showAuthStep('login');
+        if (loginFb) {
+          loginFb.textContent = 'Senha alterada com sucesso! Entre com sua nova senha.';
+          loginFb.style.color = 'var(--emerald)';
+        }
+      } catch (err) {
+        forgotFeedback.textContent = `Erro: ${err.message}`;
+        forgotFeedback.style.color = 'var(--coral)';
+      }
+    });
+  }
+
   // Botão Sair da Conta
   document.getElementById('user-logout-btn').addEventListener('click', async () => {
+    if (activeUser) {
+      sessionStorage.removeItem(`${SESSION_VERIFIED_PREFIX}${activeUser.uid}`);
+    }
     await authService.logout();
   });
 
-  // View de Configurações (Hub de Opções + Sub-views: Dados do Usuário e Tamanho das Fontes)
+  // View de Configurações (Hub Principal + Dados do Usuário + Hub de Design + Fontes + Paleta de Cores)
   const openSettingsBtn = document.getElementById('open-settings-btn');
   const settingsForm = document.getElementById('form-user-settings');
   const settingsFeedback = document.getElementById('settings-feedback');
@@ -1543,12 +1968,16 @@ function initApp() {
   const populateSettingsData = () => {
     const nameInput = document.getElementById('settings-name');
     const ageInput = document.getElementById('settings-age');
+    const phoneInput = document.getElementById('settings-phone');
     const emailInput = document.getElementById('settings-email');
     if (nameInput) {
       nameInput.value = (activeProfile && activeProfile.name) || (activeUser && activeUser.displayName) || '';
     }
     if (ageInput) {
       ageInput.value = activeProfile && activeProfile.age != null ? activeProfile.age : '';
+    }
+    if (phoneInput) {
+      phoneInput.value = (activeProfile && activeProfile.phone) || '';
     }
     if (emailInput) {
       emailInput.value = (activeUser && activeUser.email) || '';
@@ -1557,10 +1986,12 @@ function initApp() {
       settingsFeedback.textContent = '';
     }
     applyFontSettings(state.fontSettings);
+    applyColorSettings(state.colorSettings);
   };
 
-  // Aplica as fontes salvas logo na inicialização
+  // Aplica as fontes e cores salvas logo na inicialização
   applyFontSettings(state.fontSettings);
+  applyColorSettings(state.colorSettings);
 
   if (openSettingsBtn) {
     openSettingsBtn.addEventListener('click', () => {
@@ -1589,11 +2020,14 @@ function initApp() {
       e.preventDefault();
       const name = document.getElementById('settings-name').value.trim();
       const age = document.getElementById('settings-age').value.trim();
+      const phone = document.getElementById('settings-phone')
+        ? document.getElementById('settings-phone').value.trim()
+        : '';
       if (!name) return;
       settingsFeedback.textContent = 'Salvando alterações...';
       settingsFeedback.style.color = 'var(--amber)';
       try {
-        const updated = await authService.updateUserProfile({ name, age });
+        const updated = await authService.updateUserProfile({ name, age, phone });
         activeProfile = updated;
         document.getElementById('user-display-name').textContent = updated.name;
         settingsFeedback.textContent = 'Dados atualizados com sucesso!';
@@ -1610,8 +2044,10 @@ function initApp() {
     resetAllBtn.addEventListener('click', () => {
       if (!confirm('Tem certeza que deseja zerar todos os dados financeiros desta conta?')) return;
       const currentFonts = { ...DEFAULT_FONT_SETTINGS, ...(state.fontSettings || {}) };
+      const currentColors = { ...DEFAULT_COLOR_SETTINGS, ...(state.colorSettings || {}) };
       state = getInitialSeedData();
       state.fontSettings = currentFonts;
+      state.colorSettings = currentColors;
       persistAndRender();
       if (settingsFeedback) {
         settingsFeedback.textContent = 'Todos os lançamentos financeiros foram zerados.';
@@ -1643,6 +2079,43 @@ function initApp() {
     resetFontsBtn.addEventListener('click', () => {
       state.fontSettings = { ...DEFAULT_FONT_SETTINGS };
       applyFontSettings(state.fontSettings);
+      persistAndRender();
+    });
+  }
+
+  // Controles de Paleta de Cores do Aplicativo (Temas Prontos e Seletores Individuais)
+  document.querySelectorAll('[data-color-preset]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const presetKey = btn.getAttribute('data-color-preset');
+      const preset = COLOR_PRESETS[presetKey] || DEFAULT_COLOR_SETTINGS;
+      state.colorSettings = { ...preset };
+      applyColorSettings(state.colorSettings);
+      persistAndRender();
+    });
+  });
+
+  const colorPickerKeys = ['accent', 'btnText', 'bgPrimary', 'bgSecondary', 'bgCard', 'bgInput', 'textPrimary', 'textSecondary'];
+  colorPickerKeys.forEach((key) => {
+    const picker = document.getElementById(`color-picker-${key}`);
+    if (!picker) return;
+    picker.addEventListener('input', () => {
+      state.colorSettings = {
+        ...DEFAULT_COLOR_SETTINGS,
+        ...(state.colorSettings || {}),
+        [key]: picker.value
+      };
+      applyColorSettings(state.colorSettings);
+    });
+    picker.addEventListener('change', () => {
+      persistAndRender();
+    });
+  });
+
+  const resetColorsBtn = document.getElementById('reset-colors-btn');
+  if (resetColorsBtn) {
+    resetColorsBtn.addEventListener('click', () => {
+      state.colorSettings = { ...DEFAULT_COLOR_SETTINGS };
+      applyColorSettings(state.colorSettings);
       persistAndRender();
     });
   }

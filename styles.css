@@ -2097,5 +2097,271 @@ body,
   font-size: var(--fs-numbers) !important;
 }
 
+/* ===== TOPO DA NAVBAR: LOGO CF À ESQUERDA + ONLINE & ENGRENAGEM NO CANTO SUPERIOR DIREITO ===== */
+:root {
+  --btn-primary-text: #042f2e;
+  --gear-icon-color: #ffffff;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 4px 16px;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 14px;
+  width: 100%;
+  min-width: 0;
+}
+
+.brand-logo {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: var(--emerald);
+  color: var(--btn-primary-text, #042f2e);
+  font-weight: 800;
+  font-size: 1.05rem;
+  letter-spacing: -0.03em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-primary,
+.preview-buttons {
+  background-color: var(--emerald) !important;
+  color: var(--btn-primary-text, #042f2e) !important;
+}
+
+.brand-right-controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.brand-right-controls .sync-status-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  min-width: 0;
+  max-width: 100%;
+  flex: 0 1 auto;
+  overflow: hidden;
+}
+
+.brand-right-controls .sync-status-label {
+  font-size: 0.64rem;
+  line-height: 1.1;
+}
+
+.brand-right-controls #firebase-status-text {
+  font-size: 0.72rem;
+  max-width: 155px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Botão de Configurações apenas com ícone de engrenagem monocromático (totalmente branco ou totalmente preto) */
+.settings-gear-btn {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  color: var(--gear-icon-color, #ffffff);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: var(--transition);
+}
+
+.settings-gear-btn:hover {
+  background-color: var(--bg-elevated);
+  border-color: var(--emerald);
+  transform: rotate(25deg);
+}
+
+.settings-gear-btn svg {
+  width: 21px;
+  height: 21px;
+  fill: currentColor;
+  display: block;
+}
+
+/* ===== PALETA DE CORES DO APLICATIVO ===== */
+.color-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.color-preset-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.color-preset-chip:hover {
+  border-color: var(--emerald);
+  transform: translateY(-1px);
+}
+
+.preset-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 3px solid transparent;
+  flex-shrink: 0;
+}
+
+.color-picker-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.color-input-swatch {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 54px;
+  height: 38px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.color-input-swatch::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.color-input-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
+}
+
+/* ===== BOTÕES DE ENVIO DE CÓDIGO (WHATSAPP / GMAIL / SMS) E ESQUECI MINHA SENHA: APENAS TEXTO PEQUENO SEM BORDA OU BACKGROUND ===== */
+.plain-send-channels-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin: 4px 0 8px;
+}
+
+.plain-channel-btn,
+.plain-small-action-btn {
+  background: transparent !important;
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 2px 0 !important;
+  min-height: 0 !important;
+  font-family: var(--font-sans);
+  font-size: 0.78rem !important;
+  font-weight: 600;
+  color: var(--emerald);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+
+.plain-channel-btn:hover,
+.plain-small-action-btn:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+}
+
+/* ===== BANNER DE NOTIFICAÇÃO DO CÓDIGO DE VERIFICAÇÃO (PARA COPIAR E COLAR) ===== */
+.code-dispatch-toast {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2500;
+  width: min(94vw, 440px);
+  background-color: var(--bg-card);
+  border: 2px solid var(--emerald);
+  border-radius: var(--radius-md);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.65);
+  padding: 14px 16px;
+  animation: fadeIn 0.2s ease;
+}
+
+.code-toast-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.code-toast-header strong {
+  font-size: 0.9rem;
+  color: var(--emerald);
+}
+
+.code-toast-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1.25rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 4px;
+}
+
+.code-toast-content p {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+}
+
+.code-toast-box {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background-color: var(--bg-input);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+
+.code-toast-digits {
+  font-family: var(--font-mono);
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--text-primary);
+  user-select: all;
+}
+
+
 
 
