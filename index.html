@@ -23,6 +23,14 @@
           </div>
         </div>
 
+        <div id="user-profile-badge" class="user-profile-badge" style="display: none">
+          <div class="user-profile-info">
+            <span id="user-display-name" class="user-profile-name">Carregando...</span>
+            <span id="user-display-meta" class="user-profile-meta"></span>
+          </div>
+          <button id="user-logout-btn" class="user-logout-btn" title="Sair da conta">Sair</button>
+        </div>
+
         <ul class="nav-menu">
           <li>
             <button id="nav-overview-btn" class="nav-btn active" data-target="overview-view">
@@ -583,6 +591,64 @@
             Usar Só Local
           </button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal de Autenticação (Login e Registro por E-mail e Senha) -->
+  <div id="auth-overlay" class="auth-overlay">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="brand-logo" style="margin: 0 auto; width: 44px; height: 44px; font-size: 1.3rem">R$</div>
+        <h2>Ciclo Financeiro</h2>
+        <p id="auth-subtitle">Entre na sua conta para acessar seu controle financeiro</p>
+      </div>
+
+      <div class="auth-tabs">
+        <button id="auth-tab-login" class="auth-tab-btn active" type="button">Entrar</button>
+        <button id="auth-tab-register" class="auth-tab-btn" type="button">Criar Conta</button>
+      </div>
+
+      <!-- Formulário de Login -->
+      <form id="form-auth-login" class="auth-form">
+        <div class="form-group">
+          <label for="login-email">Seu E-mail / Gmail</label>
+          <input id="login-email" class="form-control" type="email" placeholder="exemplo@gmail.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Senha</label>
+          <input id="login-password" class="form-control" type="password" placeholder="Sua senha secreta" required autocomplete="current-password" />
+        </div>
+        <p id="login-feedback" class="auth-feedback"></p>
+        <button id="submit-login-btn" type="submit" class="btn btn-primary" style="width: 100%; padding: 12px">
+          Acessar Meu Painel
+        </button>
+      </form>
+
+      <!-- Formulário de Registro (com Nome e Idade) -->
+      <form id="form-auth-register" class="auth-form" style="display: none">
+        <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 10px">
+          <div class="form-group">
+            <label for="reg-name">Seu Nome</label>
+            <input id="reg-name" class="form-control" type="text" placeholder="Ex: Anthony" required autocomplete="name" />
+          </div>
+          <div class="form-group">
+            <label for="reg-age">Idade</label>
+            <input id="reg-age" class="form-control" type="number" min="1" max="120" placeholder="Ex: 24" required />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="reg-email">E-mail / Gmail</label>
+          <input id="reg-email" class="form-control" type="email" placeholder="seu-email@gmail.com" required autocomplete="email" />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Senha (mínimo 6 dígitos)</label>
+          <input id="reg-password" class="form-control" type="password" minlength="6" placeholder="Crie uma senha forte" required autocomplete="new-password" />
+        </div>
+        <p id="reg-feedback" class="auth-feedback"></p>
+        <button id="submit-reg-btn" type="submit" class="btn btn-primary" style="width: 100%; padding: 12px">
+          Cadastrar e Iniciar
+        </button>
       </form>
     </div>
   </div>

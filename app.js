@@ -1,4 +1,4 @@
-import { FinanceStorageService } from './firebase-service.js';
+import { FinanceAuthAndStorageService, DEFAULT_FIREBASE_CONFIG } from './firebase-service.js';
 
 const currentMonthKey = () => {
   const now = new Date();
@@ -39,7 +39,36 @@ const getInitialSeedData = () => {
 let state = getInitialSeedData();
 let selectedMonth = currentMonthKey();
 let pieMode = 'origin'; // 'origin' | 'category'
-let activeSliceIndex = null;
+let activeUser = null;
+let activeProfile = null;
+
+// Service de Autenticação e Firestore
+const authService = new FinanceAuthAndStorageService(
+  (user, profile) => {
+    activeUser = user;
+    activeProfile = profile;
+    handleAuthChange(user, profile);
+  },
+  (remoteData) => {
+    if (remoteData) {
+      state = {
+        incomes: remoteData.incomes || [],
+        cards: remoteData.cards || [],
+        cardExpenses: remoteData.cardExpenses || [],
+        pixExpenses: remoteData.pixExpenses || [],
+        debts: remoteData.debts || []
+      };
+      renderAll();
+    }
+  }
+);
+
+async function persistAndRender() {
+  if (activeUser) {
+    await authService.saveUserData(activeUser.uid, state);
+  }
+  renderAll();
+}
 
 // Formatters
 const formatBRL = (val) => {
@@ -59,23 +88,35 @@ const shiftMonth = (ym, delta) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-const storageService = new FinanceStorageService((remoteData) => {
-  state = {
-    incomes: remoteData.incomes || [],
-    cards: remoteData.cards || [],
-    cardExpenses: remoteData.cardExpenses || [],
-    pixExpenses: remoteData.pixExpenses || [],
-    debts: remoteData.debts || []
-  };
-  renderAll();
-});
+function handleAuthChange(user, profile) {
+  const overlay = document.getElementById('auth-overlay');
+  const badge = document.getElementById('user-profile-badge');
+  const nameEl = document.getElementById('user-display-name');
+  const metaEl = document.getElementById('user-display-meta');
+  const firebaseStatusDot = document.getElementById('firebase-status-dot');
+  const firebaseStatusText = document.getElementById('firebase-status-text');
 
-async function persistAndRender() {
-  await storageService.saveState(state);
-  renderAll();
+  if (user) {
+    overlay.classList.add('hidden');
+    badge.style.display = 'flex';
+    const displayName = (profile && profile.name) || user.displayName || 'Usuário';
+    const displayAge = (profile && profile.age) ? ` • ${profile.age} anos` : '';
+    nameEl.textContent = displayName;
+    metaEl.textContent = `${user.email}${displayAge}`;
+
+    firebaseStatusDot.classList.add('connected');
+    firebaseStatusText.textContent = `Online: ${user.email}`;
+
+    // Carrega dados específicos desse usuário
+    state = authService.loadUserData(user.uid, getInitialSeedData());
+    renderAll();
+  } else {
+    overlay.classList.remove('hidden');
+    badge.style.display = 'none';
+    firebaseStatusDot.classList.remove('connected');
+    firebaseStatusText.textContent = 'Não autenticado';
+  }
 }
-
-// Calculations for Selected Month
 function getMonthSummary(ym) {
   const incomes = state.incomes.filter((i) => i.month === ym);
   const pixExpenses = state.pixExpenses.filter((p) => p.month === ym);
@@ -679,22 +720,93 @@ function renderAll() {
 function updateFirebaseStatusBadge() {
   const dot = document.getElementById('firebase-status-dot');
   const label = document.getElementById('firebase-status-text');
-  if (storageService.isConnected) {
+  if (activeUser) {
     dot.classList.add('connected');
-    label.textContent = `Firebase: ${storageService.projectId}`;
+    label.textContent = `Online: ${activeUser.email}`;
   } else {
     dot.classList.remove('connected');
-    label.textContent = 'Modo Local (Conectar Firebase)';
+    label.textContent = 'Não autenticado';
   }
 }
 
 // Setup Event Listeners
 function initApp() {
-  state = storageService.loadLocalState(getInitialSeedData());
-
   // Set default dates in forms
   document.querySelectorAll('input[type="date"]').forEach((inp) => {
     if (!inp.value) inp.value = todayISO();
+  });
+
+  // Inicializa o serviço de autenticação
+  authService.init();
+
+  // Tabs do Modal de Autenticação (Entrar vs Criar Conta)
+  const tabLogin = document.getElementById('auth-tab-login');
+  const tabRegister = document.getElementById('auth-tab-register');
+  const formLogin = document.getElementById('form-auth-login');
+  const formRegister = document.getElementById('form-auth-register');
+  const authSubtitle = document.getElementById('auth-subtitle');
+
+  tabLogin.addEventListener('click', () => {
+    tabLogin.classList.add('active');
+    tabRegister.classList.remove('active');
+    formLogin.style.display = 'flex';
+    formRegister.style.display = 'none';
+    authSubtitle.textContent = 'Entre na sua conta para acessar seu controle financeiro';
+  });
+
+  tabRegister.addEventListener('click', () => {
+    tabRegister.classList.add('active');
+    tabLogin.classList.remove('active');
+    formLogin.style.display = 'none';
+    formRegister.style.display = 'flex';
+    authSubtitle.textContent = 'Preencha seus dados para criar sua conta';
+  });
+
+  // Form: Login
+  formLogin.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const feedback = document.getElementById('login-feedback');
+    feedback.textContent = 'Autenticando...';
+    feedback.style.color = 'var(--amber)';
+
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+
+    try {
+      await authService.loginUser(email, password);
+      feedback.textContent = 'Login efetuado com sucesso!';
+      feedback.style.color = 'var(--emerald)';
+    } catch (err) {
+      feedback.textContent = `Erro: ${err.message}`;
+      feedback.style.color = 'var(--coral)';
+    }
+  });
+
+  // Form: Registro (com Nome e Idade)
+  formRegister.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const feedback = document.getElementById('reg-feedback');
+    feedback.textContent = 'Criando conta no Firebase...';
+    feedback.style.color = 'var(--amber)';
+
+    const name = document.getElementById('reg-name').value.trim();
+    const age = parseInt(document.getElementById('reg-age').value, 10);
+    const email = document.getElementById('reg-email').value.trim();
+    const password = document.getElementById('reg-password').value;
+
+    try {
+      await authService.registerUser({ name, age, email, password }, state);
+      feedback.textContent = 'Conta criada com sucesso!';
+      feedback.style.color = 'var(--emerald)';
+    } catch (err) {
+      feedback.textContent = `Erro: ${err.message}`;
+      feedback.style.color = 'var(--coral)';
+    }
+  });
+
+  // Botão Sair da Conta
+  document.getElementById('user-logout-btn').addEventListener('click', async () => {
+    await authService.logout();
   });
 
   // Sidebar navigation
@@ -847,60 +959,6 @@ function initApp() {
     state = { incomes: [], cards: [], cardExpenses: [], pixExpenses: [], debts: [] };
     persistAndRender();
   });
-
-  // Firebase Modal Controls
-  const modal = document.getElementById('firebase-modal');
-  document.getElementById('open-firebase-modal-btn').addEventListener('click', () => {
-    const saved = storageService.getSavedFirebaseConfig();
-    if (saved) {
-      document.getElementById('fb-api-key').value = saved.apiKey || '';
-      document.getElementById('fb-auth-domain').value = saved.authDomain || '';
-      document.getElementById('fb-project-id').value = saved.projectId || '';
-      document.getElementById('fb-app-id').value = saved.appId || '';
-    }
-    modal.classList.add('open');
-  });
-
-  document.getElementById('close-firebase-modal-btn').addEventListener('click', () => {
-    modal.classList.remove('open');
-  });
-
-  document.getElementById('form-firebase-config').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const statusMsg = document.getElementById('firebase-modal-feedback');
-    statusMsg.textContent = 'Conectando ao Firebase Firestore...';
-    statusMsg.style.color = 'var(--amber)';
-
-    const config = {
-      apiKey: document.getElementById('fb-api-key').value.trim(),
-      authDomain: document.getElementById('fb-auth-domain').value.trim(),
-      projectId: document.getElementById('fb-project-id').value.trim(),
-      appId: document.getElementById('fb-app-id').value.trim()
-    };
-
-    try {
-      await storageService.connectFirebase(config, state);
-      statusMsg.textContent = 'Conectado e sincronizado com sucesso ao Firestore!';
-      statusMsg.style.color = 'var(--emerald)';
-      updateFirebaseStatusBadge();
-      setTimeout(() => modal.classList.remove('open'), 1000);
-    } catch (err) {
-      statusMsg.textContent = `Erro ao conectar: ${err.message}`;
-      statusMsg.style.color = 'var(--coral)';
-    }
-  });
-
-  document.getElementById('disconnect-firebase-btn').addEventListener('click', () => {
-    storageService.clearFirebaseConfig();
-    updateFirebaseStatusBadge();
-    document.getElementById('firebase-modal-feedback').textContent = 'Desconectado. Usando armazenamento local.';
-  });
-
-  // Auto-connect if config exists
-  const savedConfig = storageService.getSavedFirebaseConfig();
-  if (savedConfig && savedConfig.apiKey && savedConfig.projectId) {
-    storageService.connectFirebase(savedConfig, state).then(() => renderAll()).catch(() => {});
-  }
 
   renderAll();
 }
