@@ -254,70 +254,36 @@ const shiftMonth = (ym, delta) => {
 async function dispatchRealVerification(channel, destination, feedbackEl, mode = '2fa') {
   currentVerificationCode = String(Math.floor(100000 + Math.random() * 900000));
   if (feedbackEl) {
-    feedbackEl.textContent = 'Enviando verificação segura...';
+    feedbackEl.textContent = 'Enviando mensagem para o seu Gmail...';
     feedbackEl.style.color = 'var(--amber)';
   }
 
   try {
-    if (channel === 'gmail') {
-      const targetEmail =
-        (destination && destination.includes('@') ? destination : '') ||
-        (activeUser && activeUser.email) ||
-        document.getElementById('login-email').value.trim() ||
-        document.getElementById('reg-email').value.trim();
+    const targetEmail =
+      (destination && destination.includes('@') ? destination : '') ||
+      (activeUser && activeUser.email) ||
+      document.getElementById('login-email').value.trim() ||
+      document.getElementById('reg-email').value.trim();
 
-      if (!targetEmail) {
-        throw new Error('Informe um e-mail Gmail válido.');
-      }
-
-      const res = await authService.dispatchCodeViaGmail(targetEmail, currentVerificationCode, mode);
-      if (feedbackEl) {
-        if (res.method === 'emailjs_code') {
-          feedbackEl.textContent = `Código de 6 dígitos enviado diretamente para o Gmail (${targetEmail})! Verifique sua caixa de entrada ou Spam e cole no campo acima.`;
-        } else if (res.method === 'already_verified') {
-          feedbackEl.textContent = `Seu Gmail (${targetEmail}) já está verificado no Firebase! Toque em "Confirmar Verificação" abaixo para prosseguir.`;
-        } else if (res.method === 'firebase_reset_link') {
-          feedbackEl.textContent = res.alreadySentRecently
-            ? `O e-mail de redefinição já foi enviado há poucos instantes para ${targetEmail}! Verifique sua Caixa de Entrada e a pasta Spam do Gmail.`
-            : `E-mail oficial de redefinição enviado para ${targetEmail}! Abra seu Gmail (ou Spam) e clique no link enviado pelo Firebase para alterar sua senha.`;
-        } else {
-          feedbackEl.textContent = res.alreadySentRecently
-            ? `O e-mail de verificação já foi enviado há poucos instantes para ${targetEmail}! Abra seu Gmail (verifique também a pasta Spam), clique no link do Firebase e depois toque em "Confirmar Verificação".`
-            : `E-mail oficial de verificação enviado para ${targetEmail}! Abra seu Gmail (ou Spam), clique no link de confirmação do Firebase e depois toque em "Confirmar Verificação".`;
-        }
-        feedbackEl.style.color = 'var(--emerald)';
-      }
-      return res;
+    if (!targetEmail) {
+      throw new Error('Informe um e-mail Gmail válido.');
     }
 
-    if (channel === 'sms') {
-      const targetPhone =
-        destination ||
-        (activeProfile && activeProfile.phone) ||
-        document.getElementById('reg-phone').value.trim();
-      const res = await authService.dispatchCodeViaSms(targetPhone);
-      if (feedbackEl) {
-        feedbackEl.textContent = `SMS de 6 dígitos enviado para ${res.destination}! Digite o código recebido no seu celular.`;
-        feedbackEl.style.color = 'var(--emerald)';
+    const res = await authService.dispatchCodeViaGmail(targetEmail, currentVerificationCode, mode);
+    if (feedbackEl) {
+      if (res.method === 'already_verified') {
+        feedbackEl.textContent = `A verificação já foi confirmada no seu Gmail (${targetEmail})! Toque em "Confirmar Verificação" abaixo para continuar.`;
+      } else if (res.method === 'firebase_reset_link') {
+        feedbackEl.textContent = `A mensagem foi enviada para ${targetEmail} e deve ser confirmada no seu Gmail (verifique também a pasta Spam).`;
+      } else {
+        feedbackEl.textContent = `A mensagem foi enviada para ${targetEmail} e deve ser confirmada no seu Gmail. Após confirmar no Gmail, toque em "Confirmar Verificação".`;
       }
-      return res;
+      feedbackEl.style.color = 'var(--emerald)';
     }
-
-    if (channel === 'whatsapp') {
-      const targetPhone =
-        destination ||
-        (activeProfile && activeProfile.phone) ||
-        document.getElementById('reg-phone').value.trim();
-      const res = await authService.dispatchCodeViaWhatsApp(targetPhone, currentVerificationCode);
-      if (feedbackEl) {
-        feedbackEl.textContent = `Código de 6 dígitos enviado para o WhatsApp (${res.destination})!`;
-        feedbackEl.style.color = 'var(--emerald)';
-      }
-      return res;
-    }
+    return res;
   } catch (err) {
     if (feedbackEl) {
-      feedbackEl.textContent = err.message || 'Erro ao enviar verificação.';
+      feedbackEl.textContent = err.message || 'Erro ao enviar mensagem para o Gmail.';
       feedbackEl.style.color = 'var(--coral)';
     }
     return null;
@@ -345,7 +311,7 @@ function showAuthStep(stepName) {
     else if (stepName === 'register') subtitle.textContent = 'Preencha seus dados e WhatsApp para criar sua conta';
     else if (stepName === '2fa') subtitle.textContent = 'Segunda verificação de segurança';
     else if (stepName === 'stay') subtitle.textContent = 'Preferência de conexão neste dispositivo';
-    else if (stepName === 'forgot') subtitle.textContent = 'Recuperação de senha com verificação';
+    else if (stepName === 'forgot') subtitle.textContent = 'Recuperação de senha no Gmail';
   }
 }
 
@@ -388,12 +354,10 @@ function handleAuthChange(user, profile) {
       unlockAuthenticatedApp(user, profile);
     } else {
       overlay.classList.remove('hidden');
-      const codeInput = document.getElementById('auth-2fa-code');
       const fb = document.getElementById('auth-2fa-feedback');
-      if (codeInput) codeInput.value = '';
       if (fb) {
-        fb.textContent = 'Escolha abaixo Enviar no Gmail, Enviar no WhatsApp ou Enviar SMS para receber sua verificação.';
-        fb.style.color = 'var(--text-secondary)';
+        fb.textContent = `A mensagem foi enviada para ${user.email || 'seu Gmail'} e deve ser confirmada no seu Gmail.`;
+        fb.style.color = 'var(--emerald)';
       }
       showAuthStep('2fa');
     }
@@ -1765,14 +1729,9 @@ function initApp() {
         sessionStorage.setItem(`${SESSION_VERIFIED_PREFIX}${user.uid}`, 'true');
         unlockAuthenticatedApp(user, profile);
       } else {
-        const codeInput = document.getElementById('auth-2fa-code');
         const fb2fa = document.getElementById('auth-2fa-feedback');
-        if (codeInput) codeInput.value = '';
-        if (fb2fa) {
-          fb2fa.textContent = 'Toque em "Enviar no Gmail", "Enviar no WhatsApp" ou "Enviar SMS" acima para receber sua verificação.';
-          fb2fa.style.color = 'var(--text-secondary)';
-        }
         showAuthStep('2fa');
+        await dispatchRealVerification('gmail', email, fb2fa, '2fa');
       }
     } catch (err) {
       pendingAuthFlow = false;
@@ -1801,14 +1760,9 @@ function initApp() {
       activeProfile = profile;
       feedback.textContent = '';
 
-      const codeInput = document.getElementById('auth-2fa-code');
       const fb2fa = document.getElementById('auth-2fa-feedback');
-      if (codeInput) codeInput.value = '';
-      if (fb2fa) {
-        fb2fa.textContent = 'Conta criada! Toque em "Enviar no Gmail", "Enviar no WhatsApp" ou "Enviar SMS" acima para confirmar.';
-        fb2fa.style.color = 'var(--emerald)';
-      }
       showAuthStep('2fa');
+      await dispatchRealVerification('gmail', email, fb2fa, '2fa');
     } catch (err) {
       pendingAuthFlow = false;
       feedback.textContent = `Erro: ${err.message}`;
@@ -1816,34 +1770,23 @@ function initApp() {
     }
   });
 
-  // Botões pequenos de texto para enviar verificação 2FA (Enviar no WhatsApp | Enviar no Gmail | Enviar SMS)
+  // Botão pequeno de texto para reenviar verificação 2FA no Gmail
   document.querySelectorAll('[data-send-2fa]').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const channel = btn.getAttribute('data-send-2fa');
       const fb2fa = document.getElementById('auth-2fa-feedback');
-      const dest =
-        channel === 'gmail'
-          ? (activeUser && activeUser.email) || document.getElementById('login-email').value || ''
-          : (activeProfile && activeProfile.phone) || document.getElementById('reg-phone').value || '';
-      await dispatchRealVerification(channel, dest, fb2fa, '2fa');
+      const dest = (activeUser && activeUser.email) || document.getElementById('login-email').value || '';
+      await dispatchRealVerification('gmail', dest, fb2fa, '2fa');
     });
   });
 
-  // Confirmar código 2FA (código de 6 dígitos enviado por EmailJS/WhatsApp/SMS OU confirmação real no Gmail do Firebase)
+  // Confirmar verificação 2FA realizada no Gmail
   const verify2faBtn = document.getElementById('verify-2fa-btn');
   if (verify2faBtn) {
     verify2faBtn.addEventListener('click', async () => {
-      const entered = (document.getElementById('auth-2fa-code').value || '').trim();
       const fb2fa = document.getElementById('auth-2fa-feedback');
-
-      if (entered && currentVerificationCode && entered === currentVerificationCode) {
-        fb2fa.textContent = '';
-        showAuthStep('stay');
-        return;
-      }
-
-      fb2fa.textContent = 'Verificando confirmação no servidor do Firebase...';
+      fb2fa.textContent = 'Verificando confirmação do seu Gmail...';
       fb2fa.style.color = 'var(--amber)';
+
       const emailVerified = await authService.checkFirebaseEmailVerified();
       if (emailVerified) {
         fb2fa.textContent = '';
@@ -1852,7 +1795,7 @@ function initApp() {
       }
 
       fb2fa.textContent =
-        'Verificação pendente: digite o código de 6 dígitos recebido OU clique no link enviado pelo Firebase ao seu Gmail e tente novamente.';
+        'A mensagem foi enviada e ainda aguarda confirmação no seu Gmail (verifique a Caixa de Entrada ou Spam, clique no link recebido e toque novamente em Confirmar Verificação).';
       fb2fa.style.color = 'var(--coral)';
     });
   }
@@ -1892,22 +1835,17 @@ function initApp() {
     });
   }
 
-  // Fluxo "Esqueci minha senha" (envia verificação real via Gmail, WhatsApp ou SMS)
+  // Fluxo "Esqueci minha senha" (envia verificação direto para o Gmail)
   const openForgotBtn = document.getElementById('open-forgot-password-btn');
   const backToLoginBtn = document.getElementById('back-to-login-btn');
-  const confirmForgotCodeBtn = document.getElementById('confirm-forgot-code-btn');
-  const saveNewPasswordBtn = document.getElementById('save-new-password-btn');
-  const forgotNewPassSection = document.getElementById('forgot-new-password-section');
   const forgotFeedback = document.getElementById('forgot-feedback');
 
   if (openForgotBtn) {
     openForgotBtn.addEventListener('click', () => {
-      forgotPasswordCodeVerified = false;
-      document.getElementById('forgot-identifier').value = document.getElementById('login-email').value.trim();
-      document.getElementById('forgot-code').value = '';
-      document.getElementById('forgot-new-password').value = '';
-      document.getElementById('forgot-confirm-password').value = '';
-      if (forgotNewPassSection) forgotNewPassSection.style.display = 'none';
+      const forgotIdEl = document.getElementById('forgot-identifier');
+      if (forgotIdEl) {
+        forgotIdEl.value = document.getElementById('login-email').value.trim();
+      }
       if (forgotFeedback) forgotFeedback.textContent = '';
       showAuthStep('forgot');
     });
@@ -1921,81 +1859,17 @@ function initApp() {
 
   document.querySelectorAll('[data-send-forgot]').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const channel = btn.getAttribute('data-send-forgot');
       const identifier = document.getElementById('forgot-identifier').value.trim();
       if (!identifier) {
-        forgotFeedback.textContent = 'Informe seu Gmail ou Telefone (WhatsApp) primeiro.';
+        forgotFeedback.textContent = 'Informe seu Gmail primeiro.';
         forgotFeedback.style.color = 'var(--coral)';
         return;
       }
-      forgotPasswordCodeVerified = false;
-      if (forgotNewPassSection) forgotNewPassSection.style.display = 'none';
       const record = await authService.lookupAccountByIdentifier(identifier);
-      const dest =
-        channel === 'gmail'
-          ? (record && record.email) || identifier
-          : (record && record.phone) || identifier;
-      await dispatchRealVerification(channel, dest, forgotFeedback, 'forgot');
+      const dest = (record && record.email) || identifier;
+      await dispatchRealVerification('gmail', dest, forgotFeedback, 'forgot');
     });
   });
-
-  if (confirmForgotCodeBtn) {
-    confirmForgotCodeBtn.addEventListener('click', () => {
-      const entered = (document.getElementById('forgot-code').value || '').trim();
-      if (!entered || !currentVerificationCode || entered !== currentVerificationCode) {
-        forgotFeedback.textContent = 'Código inválido. Verifique o código de 6 dígitos enviado para o seu canal.';
-        forgotFeedback.style.color = 'var(--coral)';
-        return;
-      }
-      forgotPasswordCodeVerified = true;
-      if (forgotNewPassSection) forgotNewPassSection.style.display = 'flex';
-      forgotFeedback.textContent = 'Código confirmado! Agora digite sua nova senha abaixo.';
-      forgotFeedback.style.color = 'var(--emerald)';
-    });
-  }
-
-  if (saveNewPasswordBtn) {
-    saveNewPasswordBtn.addEventListener('click', async () => {
-      if (!forgotPasswordCodeVerified) {
-        forgotFeedback.textContent = 'Confirme o código de verificação antes de alterar a senha.';
-        forgotFeedback.style.color = 'var(--coral)';
-        return;
-      }
-      const identifier = document.getElementById('forgot-identifier').value.trim();
-      const newPass = document.getElementById('forgot-new-password').value;
-      const confirmPass = document.getElementById('forgot-confirm-password').value;
-
-      if (!newPass || newPass.length < 6) {
-        forgotFeedback.textContent = 'A nova senha deve ter pelo menos 6 dígitos.';
-        forgotFeedback.style.color = 'var(--coral)';
-        return;
-      }
-      if (newPass !== confirmPass) {
-        forgotFeedback.textContent = 'As senhas digitadas não coincidem.';
-        forgotFeedback.style.color = 'var(--coral)';
-        return;
-      }
-
-      forgotFeedback.textContent = 'Atualizando sua senha...';
-      forgotFeedback.style.color = 'var(--amber)';
-
-      try {
-        const res = await authService.resetPasswordWithVerifiedCode(identifier, newPass);
-        if (res && res.email) {
-          document.getElementById('login-email').value = res.email;
-        }
-        const loginFb = document.getElementById('login-feedback');
-        showAuthStep('login');
-        if (loginFb) {
-          loginFb.textContent = 'Senha alterada com sucesso! Entre com sua nova senha.';
-          loginFb.style.color = 'var(--emerald)';
-        }
-      } catch (err) {
-        forgotFeedback.textContent = `Erro: ${err.message}`;
-        forgotFeedback.style.color = 'var(--coral)';
-      }
-    });
-  }
 
   // Botão Sair da Conta
   document.getElementById('user-logout-btn').addEventListener('click', async () => {

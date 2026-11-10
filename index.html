@@ -1304,20 +1304,17 @@
         </button>
       </form>
 
-      <!-- 3. Etapa de Segunda Verificação (2FA no Login ou Registro) -->
+      <!-- 3. Etapa de Segunda Verificação (2FA no Login ou Registro via Gmail) -->
       <div id="auth-step-2fa" class="auth-form" style="display: none">
         <div class="form-group">
-          <label for="auth-2fa-code">Segunda Verificação de Segurança</label>
-          <p id="auth-2fa-target-info" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px">
-            Clique abaixo para receber sua verificação diretamente no seu Gmail, WhatsApp ou SMS:
+          <label>Segunda Verificação de Segurança</label>
+          <p id="auth-2fa-target-info" style="font-size: 0.84rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 8px">
+            A mensagem de verificação foi enviada e deve ser confirmada no seu <strong>Gmail</strong> (verifique a Caixa de Entrada ou a pasta Spam). Após confirmar no Gmail, toque no botão abaixo.
           </p>
-          <!-- Botões apenas texto pequeno sem borda ou background-color -->
+          <!-- Botão apenas texto pequeno sem borda ou background-color -->
           <div class="plain-send-channels-row">
-            <button type="button" class="plain-channel-btn" data-send-2fa="whatsapp">Enviar no WhatsApp</button>
             <button type="button" class="plain-channel-btn" data-send-2fa="gmail">Enviar no Gmail</button>
-            <button type="button" class="plain-channel-btn" data-send-2fa="sms">Enviar SMS</button>
           </div>
-          <input id="auth-2fa-code" class="form-control" type="text" inputmode="numeric" maxlength="6" placeholder="Cole o código de 6 dígitos (ou confirme o link no Gmail)" autocomplete="one-time-code" />
         </div>
         <p id="auth-2fa-feedback" class="auth-feedback"></p>
         <div style="display: flex; flex-direction: column; gap: 8px">
@@ -1348,42 +1345,18 @@
         </div>
       </div>
 
-      <!-- 5. Etapa "Esqueci minha senha" (envia verificação direto para o Gmail, WhatsApp ou SMS) -->
+      <!-- 5. Etapa "Esqueci minha senha" (envia verificação direto para o Gmail) -->
       <div id="auth-step-forgot" class="auth-form" style="display: none">
         <div class="form-group">
-          <label for="forgot-identifier">Seu Gmail ou Telefone (WhatsApp)</label>
-          <input id="forgot-identifier" class="form-control" type="text" placeholder="exemplo@gmail.com ou (11) 99999-9999" />
-          <!-- Botões apenas texto pequeno sem borda ou background-color -->
+          <label for="forgot-identifier">Seu E-mail / Gmail</label>
+          <input id="forgot-identifier" class="form-control" type="email" placeholder="exemplo@gmail.com" />
+          <p style="font-size: 0.82rem; color: var(--text-secondary); line-height: 1.45; margin-top: 6px">
+            Toque abaixo para enviar a mensagem de redefinição e confirme diretamente no seu <strong>Gmail</strong>.
+          </p>
+          <!-- Botão apenas texto pequeno sem borda ou background-color -->
           <div class="plain-send-channels-row" style="margin-top: 6px">
-            <button type="button" class="plain-channel-btn" data-send-forgot="whatsapp">Enviar no WhatsApp</button>
             <button type="button" class="plain-channel-btn" data-send-forgot="gmail">Enviar no Gmail</button>
-            <button type="button" class="plain-channel-btn" data-send-forgot="sms">Enviar SMS</button>
           </div>
-        </div>
-
-        <div class="form-group">
-          <label for="forgot-code">Código de Verificação Recebido</label>
-          <div style="display: flex; gap: 8px">
-            <input id="forgot-code" class="form-control" type="text" inputmode="numeric" maxlength="6" placeholder="Código de 6 dígitos" />
-            <button id="confirm-forgot-code-btn" type="button" class="btn btn-secondary btn-sm" style="white-space: nowrap">
-              Validar Código
-            </button>
-          </div>
-        </div>
-
-        <!-- Campos de nova senha liberados apenas após validar o código -->
-        <div id="forgot-new-password-section" style="display: none; flex-direction: column; gap: 12px; padding-top: 6px; border-top: 1px solid var(--border-subtle)">
-          <div class="form-group">
-            <label for="forgot-new-password">Nova Senha (mínimo 6 dígitos)</label>
-            <input id="forgot-new-password" class="form-control" type="password" minlength="6" placeholder="Digite sua nova senha" />
-          </div>
-          <div class="form-group">
-            <label for="forgot-confirm-password">Confirmar Nova Senha</label>
-            <input id="forgot-confirm-password" class="form-control" type="password" minlength="6" placeholder="Repita a nova senha" />
-          </div>
-          <button id="save-new-password-btn" type="button" class="btn btn-primary" style="width: 100%; padding: 12px">
-            Salvar Nova Senha
-          </button>
         </div>
 
         <p id="forgot-feedback" class="auth-feedback"></p>
@@ -1395,6 +1368,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261110f"></script>
+  <script type="module" src="./app.js?v=20261110g"></script>
 </body>
 </html>
