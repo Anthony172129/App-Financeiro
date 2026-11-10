@@ -251,35 +251,71 @@ const shiftMonth = (ym, delta) => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 };
 
-function generateAndShowVerificationCode(channel, destinationLabel, feedbackEl) {
+async function dispatchRealVerification(channel, destination, feedbackEl, mode = '2fa') {
   currentVerificationCode = String(Math.floor(100000 + Math.random() * 900000));
-  const channelNames = {
-    whatsapp: 'WhatsApp',
-    gmail: 'Gmail',
-    sms: 'SMS'
-  };
-  const chLabel = channelNames[channel] || 'Canal';
-  const toast = document.getElementById('code-dispatch-toast');
-  const toastChannel = document.getElementById('code-toast-channel');
-  const toastDesc = document.getElementById('code-toast-desc');
-  const toastVal = document.getElementById('code-toast-value');
-  const copyBtn = document.getElementById('copy-code-toast-btn');
-
-  if (toast && toastVal) {
-    toastChannel.textContent = `Código enviado no ${chLabel}`;
-    toastDesc.textContent = destinationLabel
-      ? `Enviado para ${destinationLabel}. Copie e cole o código abaixo:`
-      : `Copie e cole o código de 6 dígitos abaixo para confirmar:`;
-    toastVal.textContent = currentVerificationCode;
-    if (copyBtn) copyBtn.textContent = 'Copiar Código';
-    toast.style.display = 'block';
-  }
-
   if (feedbackEl) {
-    feedbackEl.textContent = `Código enviado no ${chLabel}! Copie o código acima e cole no campo.`;
-    feedbackEl.style.color = 'var(--emerald)';
+    feedbackEl.textContent = 'Enviando verificação segura...';
+    feedbackEl.style.color = 'var(--amber)';
   }
-  return currentVerificationCode;
+
+  try {
+    if (channel === 'gmail') {
+      const targetEmail =
+        (destination && destination.includes('@') ? destination : '') ||
+        (activeUser && activeUser.email) ||
+        document.getElementById('login-email').value.trim() ||
+        document.getElementById('reg-email').value.trim();
+
+      if (!targetEmail) {
+        throw new Error('Informe um e-mail Gmail válido.');
+      }
+
+      const res = await authService.dispatchCodeViaGmail(targetEmail, currentVerificationCode, mode);
+      if (feedbackEl) {
+        if (res.method === 'emailjs_code') {
+          feedbackEl.textContent = `Código de 6 dígitos enviado diretamente para o Gmail (${targetEmail})! Verifique sua caixa de entrada ou Spam e cole no campo acima.`;
+        } else if (res.method === 'firebase_reset_link') {
+          feedbackEl.textContent = `E-mail oficial de redefinição enviado para ${targetEmail}! Abra seu Gmail (ou Spam) e clique no link enviado pelo Firebase para alterar sua senha.`;
+        } else {
+          feedbackEl.textContent = `E-mail oficial de verificação enviado para ${targetEmail}! Abra seu Gmail (ou Spam), clique no link de confirmação do Firebase e depois toque em "Confirmar Verificação".`;
+        }
+        feedbackEl.style.color = 'var(--emerald)';
+      }
+      return res;
+    }
+
+    if (channel === 'sms') {
+      const targetPhone =
+        destination ||
+        (activeProfile && activeProfile.phone) ||
+        document.getElementById('reg-phone').value.trim();
+      const res = await authService.dispatchCodeViaSms(targetPhone);
+      if (feedbackEl) {
+        feedbackEl.textContent = `SMS de 6 dígitos enviado para ${res.destination}! Digite o código recebido no seu celular.`;
+        feedbackEl.style.color = 'var(--emerald)';
+      }
+      return res;
+    }
+
+    if (channel === 'whatsapp') {
+      const targetPhone =
+        destination ||
+        (activeProfile && activeProfile.phone) ||
+        document.getElementById('reg-phone').value.trim();
+      const res = await authService.dispatchCodeViaWhatsApp(targetPhone, currentVerificationCode);
+      if (feedbackEl) {
+        feedbackEl.textContent = `Código de 6 dígitos enviado para o WhatsApp (${res.destination})!`;
+        feedbackEl.style.color = 'var(--emerald)';
+      }
+      return res;
+    }
+  } catch (err) {
+    if (feedbackEl) {
+      feedbackEl.textContent = err.message || 'Erro ao enviar verificação.';
+      feedbackEl.style.color = 'var(--coral)';
+    }
+    return null;
+  }
 }
 
 function showAuthStep(stepName) {
@@ -303,7 +339,7 @@ function showAuthStep(stepName) {
     else if (stepName === 'register') subtitle.textContent = 'Preencha seus dados e WhatsApp para criar sua conta';
     else if (stepName === '2fa') subtitle.textContent = 'Segunda verificação de segurança';
     else if (stepName === 'stay') subtitle.textContent = 'Preferência de conexão neste dispositivo';
-    else if (stepName === 'forgot') subtitle.textContent = 'Recuperação de senha com código de verificação';
+    else if (stepName === 'forgot') subtitle.textContent = 'Recuperação de senha com verificação';
   }
 }
 
@@ -313,9 +349,7 @@ function unlockAuthenticatedApp(user, profile) {
   const nameEl = document.getElementById('user-display-name');
   const firebaseStatusDot = document.getElementById('firebase-status-dot');
   const firebaseStatusText = document.getElementById('firebase-status-text');
-  const toast = document.getElementById('code-dispatch-toast');
 
-  if (toast) toast.style.display = 'none';
   overlay.classList.add('hidden');
   badge.style.display = 'flex';
   const displayName = (profile && profile.name) || user.displayName || 'Usuário';
@@ -339,24 +373,23 @@ function handleAuthChange(user, profile) {
   const firebaseStatusText = document.getElementById('firebase-status-text');
 
   if (user) {
-    // Se o fluxo manual de Login/Registro estiver conduzindo o 2FA, aguarda confirmação do usuário
     if (pendingAuthFlow) return;
 
     const stayPref = localStorage.getItem(`${STAY_CONNECTED_PREFIX}${user.uid}`);
     const sessionVerified = sessionStorage.getItem(`${SESSION_VERIFIED_PREFIX}${user.uid}`) === 'true';
 
-    // Se o usuário escolheu "Permanecer" anteriormente ou já verificou nesta sessão, entra direto sem pedir 2FA
     if (stayPref === 'true' || sessionVerified) {
       unlockAuthenticatedApp(user, profile);
     } else {
-      // Se escolheu "Não manter conectado", exige a dupla verificação ao conectar
       overlay.classList.remove('hidden');
       const codeInput = document.getElementById('auth-2fa-code');
       const fb = document.getElementById('auth-2fa-feedback');
       if (codeInput) codeInput.value = '';
-      if (fb) fb.textContent = '';
+      if (fb) {
+        fb.textContent = 'Escolha abaixo Enviar no Gmail, Enviar no WhatsApp ou Enviar SMS para receber sua verificação.';
+        fb.style.color = 'var(--text-secondary)';
+      }
       showAuthStep('2fa');
-      generateAndShowVerificationCode('gmail', user.email || '', fb);
     }
   } else {
     overlay.classList.remove('hidden');
@@ -1673,25 +1706,6 @@ function initApp() {
   // Inicializa o serviço de autenticação
   authService.init();
 
-  // Banner de cópia rápida do código de verificação
-  const closeToastBtn = document.getElementById('close-code-toast-btn');
-  const copyToastBtn = document.getElementById('copy-code-toast-btn');
-  if (closeToastBtn) {
-    closeToastBtn.addEventListener('click', () => {
-      document.getElementById('code-dispatch-toast').style.display = 'none';
-    });
-  }
-  if (copyToastBtn) {
-    copyToastBtn.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(currentVerificationCode);
-        copyToastBtn.textContent = 'Copiado!';
-      } catch (_) {
-        copyToastBtn.textContent = currentVerificationCode;
-      }
-    });
-  }
-
   // Tabs do Modal de Autenticação (Entrar vs Criar Conta)
   const tabLogin = document.getElementById('auth-tab-login');
   const tabRegister = document.getElementById('auth-tab-register');
@@ -1737,7 +1751,7 @@ function initApp() {
         const fb2fa = document.getElementById('auth-2fa-feedback');
         if (codeInput) codeInput.value = '';
         showAuthStep('2fa');
-        generateAndShowVerificationCode('gmail', user.email || email, fb2fa);
+        await dispatchRealVerification('gmail', user.email || email, fb2fa, '2fa');
       }
     } catch (err) {
       pendingAuthFlow = false;
@@ -1770,7 +1784,7 @@ function initApp() {
       const fb2fa = document.getElementById('auth-2fa-feedback');
       if (codeInput) codeInput.value = '';
       showAuthStep('2fa');
-      generateAndShowVerificationCode('whatsapp', phone || email, fb2fa);
+      await dispatchRealVerification('gmail', email, fb2fa, '2fa');
     } catch (err) {
       pendingAuthFlow = false;
       feedback.textContent = `Erro: ${err.message}`;
@@ -1778,33 +1792,44 @@ function initApp() {
     }
   });
 
-  // Botões pequenos de texto para enviar código 2FA (Enviar no WhatsApp | Enviar no Gmail | Enviar SMS)
+  // Botões pequenos de texto para enviar verificação 2FA (Enviar no WhatsApp | Enviar no Gmail | Enviar SMS)
   document.querySelectorAll('[data-send-2fa]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const channel = btn.getAttribute('data-send-2fa');
       const fb2fa = document.getElementById('auth-2fa-feedback');
       const dest =
         channel === 'gmail'
           ? (activeUser && activeUser.email) || document.getElementById('login-email').value || ''
-          : (activeProfile && activeProfile.phone) || document.getElementById('reg-phone').value || (activeUser && activeUser.email) || '';
-      generateAndShowVerificationCode(channel, dest, fb2fa);
+          : (activeProfile && activeProfile.phone) || document.getElementById('reg-phone').value || '';
+      await dispatchRealVerification(channel, dest, fb2fa, '2fa');
     });
   });
 
-  // Confirmar código de 2FA -> Abre pergunta "Permanecer conectado?"
+  // Confirmar código 2FA (código de 6 dígitos enviado por EmailJS/WhatsApp/SMS OU confirmação real no Gmail do Firebase)
   const verify2faBtn = document.getElementById('verify-2fa-btn');
   if (verify2faBtn) {
-    verify2faBtn.addEventListener('click', () => {
+    verify2faBtn.addEventListener('click', async () => {
       const entered = (document.getElementById('auth-2fa-code').value || '').trim();
       const fb2fa = document.getElementById('auth-2fa-feedback');
-      if (!entered || entered !== currentVerificationCode) {
-        fb2fa.textContent = 'Código inválido. Verifique o código de 6 dígitos enviado e tente novamente.';
-        fb2fa.style.color = 'var(--coral)';
+
+      if (entered && currentVerificationCode && entered === currentVerificationCode) {
+        fb2fa.textContent = '';
+        showAuthStep('stay');
         return;
       }
-      fb2fa.textContent = '';
-      document.getElementById('code-dispatch-toast').style.display = 'none';
-      showAuthStep('stay');
+
+      fb2fa.textContent = 'Verificando confirmação no servidor do Firebase...';
+      fb2fa.style.color = 'var(--amber)';
+      const emailVerified = await authService.checkFirebaseEmailVerified();
+      if (emailVerified) {
+        fb2fa.textContent = '';
+        showAuthStep('stay');
+        return;
+      }
+
+      fb2fa.textContent =
+        'Verificação pendente: digite o código de 6 dígitos recebido OU clique no link enviado pelo Firebase ao seu Gmail e tente novamente.';
+      fb2fa.style.color = 'var(--coral)';
     });
   }
 
@@ -1812,7 +1837,6 @@ function initApp() {
   if (cancel2faBtn) {
     cancel2faBtn.addEventListener('click', async () => {
       pendingAuthFlow = false;
-      document.getElementById('code-dispatch-toast').style.display = 'none';
       await authService.logout();
       showAuthStep('login');
     });
@@ -1844,7 +1868,7 @@ function initApp() {
     });
   }
 
-  // Fluxo "Esqueci minha senha" (com confirmação de código via WhatsApp, Gmail ou SMS)
+  // Fluxo "Esqueci minha senha" (envia verificação real via Gmail, WhatsApp ou SMS)
   const openForgotBtn = document.getElementById('open-forgot-password-btn');
   const backToLoginBtn = document.getElementById('back-to-login-btn');
   const confirmForgotCodeBtn = document.getElementById('confirm-forgot-code-btn');
@@ -1867,13 +1891,12 @@ function initApp() {
 
   if (backToLoginBtn) {
     backToLoginBtn.addEventListener('click', () => {
-      document.getElementById('code-dispatch-toast').style.display = 'none';
       showAuthStep('login');
     });
   }
 
   document.querySelectorAll('[data-send-forgot]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const channel = btn.getAttribute('data-send-forgot');
       const identifier = document.getElementById('forgot-identifier').value.trim();
       if (!identifier) {
@@ -1883,7 +1906,12 @@ function initApp() {
       }
       forgotPasswordCodeVerified = false;
       if (forgotNewPassSection) forgotNewPassSection.style.display = 'none';
-      generateAndShowVerificationCode(channel, identifier, forgotFeedback);
+      const record = await authService.lookupAccountByIdentifier(identifier);
+      const dest =
+        channel === 'gmail'
+          ? (record && record.email) || identifier
+          : (record && record.phone) || identifier;
+      await dispatchRealVerification(channel, dest, forgotFeedback, 'forgot');
     });
   });
 
@@ -1891,12 +1919,11 @@ function initApp() {
     confirmForgotCodeBtn.addEventListener('click', () => {
       const entered = (document.getElementById('forgot-code').value || '').trim();
       if (!entered || !currentVerificationCode || entered !== currentVerificationCode) {
-        forgotFeedback.textContent = 'Código incorreto. Clique em Enviar no WhatsApp, Gmail ou SMS e cole o código de 6 dígitos.';
+        forgotFeedback.textContent = 'Código inválido. Verifique o código de 6 dígitos enviado para o seu canal.';
         forgotFeedback.style.color = 'var(--coral)';
         return;
       }
       forgotPasswordCodeVerified = true;
-      document.getElementById('code-dispatch-toast').style.display = 'none';
       if (forgotNewPassSection) forgotNewPassSection.style.display = 'flex';
       forgotFeedback.textContent = 'Código confirmado! Agora digite sua nova senha abaixo.';
       forgotFeedback.style.color = 'var(--emerald)';
@@ -1982,6 +2009,17 @@ function initApp() {
     if (emailInput) {
       emailInput.value = (activeUser && activeUser.email) || '';
     }
+
+    const msgCfg = authService.getMessagingConfig();
+    const ejsService = document.getElementById('cfg-emailjs-service');
+    const ejsTemplate = document.getElementById('cfg-emailjs-template');
+    const ejsKey = document.getElementById('cfg-emailjs-key');
+    const waUrl = document.getElementById('cfg-whatsapp-url');
+    if (ejsService) ejsService.value = msgCfg.emailjsServiceId || '';
+    if (ejsTemplate) ejsTemplate.value = msgCfg.emailjsTemplateId || '';
+    if (ejsKey) ejsKey.value = msgCfg.emailjsPublicKey || '';
+    if (waUrl) waUrl.value = msgCfg.whatsappWebhookUrl || '';
+
     if (settingsFeedback) {
       settingsFeedback.textContent = '';
     }
@@ -2023,6 +2061,14 @@ function initApp() {
       const phone = document.getElementById('settings-phone')
         ? document.getElementById('settings-phone').value.trim()
         : '';
+
+      authService.saveMessagingConfig({
+        emailjsServiceId: (document.getElementById('cfg-emailjs-service')?.value || '').trim(),
+        emailjsTemplateId: (document.getElementById('cfg-emailjs-template')?.value || '').trim(),
+        emailjsPublicKey: (document.getElementById('cfg-emailjs-key')?.value || '').trim(),
+        whatsappWebhookUrl: (document.getElementById('cfg-whatsapp-url')?.value || '').trim()
+      });
+
       if (!name) return;
       settingsFeedback.textContent = 'Salvando alterações...';
       settingsFeedback.style.color = 'var(--amber)';
@@ -2030,7 +2076,7 @@ function initApp() {
         const updated = await authService.updateUserProfile({ name, age, phone });
         activeProfile = updated;
         document.getElementById('user-display-name').textContent = updated.name;
-        settingsFeedback.textContent = 'Dados atualizados com sucesso!';
+        settingsFeedback.textContent = 'Dados e configurações salvos com sucesso!';
         settingsFeedback.style.color = 'var(--emerald)';
       } catch (err) {
         settingsFeedback.textContent = `Erro ao salvar: ${err.message}`;

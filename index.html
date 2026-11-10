@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20261110d" />
+  <link rel="stylesheet" href="./styles.css?v=20261110e" />
 </head>
 <body>
   <div class="app-shell">
@@ -853,6 +853,35 @@
                 </div>
               </div>
 
+              <div style="padding-top: 12px; border-top: 1px solid var(--border-subtle)">
+                <strong style="display: block; font-size: 0.9rem; margin-bottom: 4px; color: var(--text-primary)">
+                  Envio Real de Código 6 Dígitos (EmailJS Gratuito / WhatsApp API)
+                </strong>
+                <p style="font-size: 0.78rem; color: var(--text-secondary); margin-bottom: 10px">
+                  Por padrão, o Firebase já envia e-mails reais gratuitamente para o Gmail. Se quiser enviar o código numérico de 6 dígitos direto no Gmail (via EmailJS gratuito) ou WhatsApp (CallMeBot/Webhook), preencha abaixo:
+                </p>
+                <div class="form-row-2" style="margin-bottom: 10px">
+                  <div class="form-group">
+                    <label for="cfg-emailjs-service">EmailJS Service ID</label>
+                    <input id="cfg-emailjs-service" class="form-control" type="text" placeholder="Ex: service_xxxxxxx" />
+                  </div>
+                  <div class="form-group">
+                    <label for="cfg-emailjs-template">EmailJS Template ID</label>
+                    <input id="cfg-emailjs-template" class="form-control" type="text" placeholder="Ex: template_xxxxxxx" />
+                  </div>
+                </div>
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="cfg-emailjs-key">EmailJS Public Key</label>
+                    <input id="cfg-emailjs-key" class="form-control" type="text" placeholder="Ex: uX9_xxxxxxxxx" />
+                  </div>
+                  <div class="form-group">
+                    <label for="cfg-whatsapp-url">URL Webhook WhatsApp (opcional)</label>
+                    <input id="cfg-whatsapp-url" class="form-control" type="text" placeholder="https://api.callmebot.com/whatsapp.php?phone={phone}&text={text}&apikey=SUA_KEY" />
+                  </div>
+                </div>
+              </div>
+
               <p id="settings-feedback" style="font-size: 0.85rem; min-height: 20px"></p>
 
               <div style="display: flex; gap: 10px; flex-wrap: wrap">
@@ -1210,21 +1239,6 @@
     </main>
   </div>
 
-  <!-- Banner Flutuante de Código Enviado (Gmail / WhatsApp / SMS) para fácil cópia -->
-  <div id="code-dispatch-toast" class="code-dispatch-toast" style="display: none">
-    <div class="code-toast-content">
-      <div class="code-toast-header">
-        <strong id="code-toast-channel">Código de Verificação Enviado</strong>
-        <button id="close-code-toast-btn" type="button" class="code-toast-close" aria-label="Fechar">&times;</button>
-      </div>
-      <p id="code-toast-desc">Copie e cole o código de 6 dígitos abaixo para confirmar:</p>
-      <div class="code-toast-box">
-        <span id="code-toast-value" class="code-toast-digits">000000</span>
-        <button id="copy-code-toast-btn" type="button" class="btn btn-primary btn-sm">Copiar Código</button>
-      </div>
-    </div>
-  </div>
-
   <!-- Modal de Autenticação (Login, Registro com WhatsApp, 2FA, Esqueci Minha Senha e Permanecer Conectado) -->
   <div id="auth-overlay" class="auth-overlay">
     <div class="auth-card">
@@ -1293,9 +1307,9 @@
       <!-- 3. Etapa de Segunda Verificação (2FA no Login ou Registro) -->
       <div id="auth-step-2fa" class="auth-form" style="display: none">
         <div class="form-group">
-          <label for="auth-2fa-code">Código de Segunda Verificação</label>
+          <label for="auth-2fa-code">Segunda Verificação de Segurança</label>
           <p id="auth-2fa-target-info" style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 6px">
-            Escolha por onde deseja receber o código de 6 dígitos e cole-o abaixo:
+            Clique abaixo para receber sua verificação diretamente no seu Gmail, WhatsApp ou SMS:
           </p>
           <!-- Botões apenas texto pequeno sem borda ou background-color -->
           <div class="plain-send-channels-row">
@@ -1303,12 +1317,12 @@
             <button type="button" class="plain-channel-btn" data-send-2fa="gmail">Enviar no Gmail</button>
             <button type="button" class="plain-channel-btn" data-send-2fa="sms">Enviar SMS</button>
           </div>
-          <input id="auth-2fa-code" class="form-control" type="text" inputmode="numeric" maxlength="6" placeholder="Cole o código de 6 dígitos (Ex: 123456)" autocomplete="one-time-code" />
+          <input id="auth-2fa-code" class="form-control" type="text" inputmode="numeric" maxlength="6" placeholder="Cole o código de 6 dígitos (ou confirme o link no Gmail)" autocomplete="one-time-code" />
         </div>
         <p id="auth-2fa-feedback" class="auth-feedback"></p>
         <div style="display: flex; flex-direction: column; gap: 8px">
           <button id="verify-2fa-btn" type="button" class="btn btn-primary" style="width: 100%; padding: 12px">
-            Confirmar Código de Verificação
+            Confirmar Verificação
           </button>
           <button id="cancel-2fa-btn" type="button" class="plain-small-action-btn" style="align-self: center">
             &#8592; Voltar
@@ -1334,7 +1348,7 @@
         </div>
       </div>
 
-      <!-- 5. Etapa "Esqueci minha senha" (envia código no WhatsApp, Gmail ou SMS antes de liberar nova senha) -->
+      <!-- 5. Etapa "Esqueci minha senha" (envia verificação direto para o Gmail, WhatsApp ou SMS) -->
       <div id="auth-step-forgot" class="auth-form" style="display: none">
         <div class="form-group">
           <label for="forgot-identifier">Seu Gmail ou Telefone (WhatsApp)</label>
@@ -1381,6 +1395,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261110d"></script>
+  <script type="module" src="./app.js?v=20261110e"></script>
 </body>
 </html>

@@ -38,7 +38,19 @@ export class FinanceAuthAndStorageService {
 
     const [
       { initializeApp, getApps, getApp },
-      { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, updateProfile, updatePassword, sendPasswordResetEmail },
+      {
+        getAuth,
+        onAuthStateChanged,
+        createUserWithEmailAndPassword,
+        signInWithEmailAndPassword,
+        signOut,
+        updateProfile,
+        updatePassword,
+        sendPasswordResetEmail,
+        sendEmailVerification,
+        RecaptchaVerifier,
+        PhoneAuthProvider
+      },
       { getFirestore, doc, setDoc, getDoc, onSnapshot }
     ] = await Promise.all([
       import('https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js'),
@@ -50,6 +62,7 @@ export class FinanceAuthAndStorageService {
     const app = getApps().find((a) => a.name === appName) || initializeApp(DEFAULT_FIREBASE_CONFIG, appName);
 
     this.auth = getAuth(app);
+    this.auth.languageCode = 'pt-BR';
     this.db = getFirestore(app);
 
     this.doc = doc;
@@ -63,6 +76,11 @@ export class FinanceAuthAndStorageService {
     this.updateProfile = updateProfile;
     this.updatePassword = updatePassword;
     this.sendPasswordResetEmail = sendPasswordResetEmail;
+    this.sendEmailVerification = sendEmailVerification;
+    this.RecaptchaVerifier = RecaptchaVerifier;
+    this.PhoneAuthProvider = PhoneAuthProvider;
+    this.smsVerificationId = null;
+    this.recaptchaVerifier = null;
 
     // Observa estado de autenticação em tempo real
     onAuthStateChanged(this.auth, async (user) => {
@@ -94,6 +112,124 @@ export class FinanceAuthAndStorageService {
 
   _normalizePhoneKey(phone) {
     return String(phone || '').replace(/\D/g, '');
+  }
+
+  _formatE164Brazil(phone) {
+    const digits = this._normalizePhoneKey(phone);
+    if (!digits) return '';
+    if (String(phone).trim().startsWith('+')) return `+${digits}`;
+    if (digits.startsWith('55') && digits.length >= 12) return `+${digits}`;
+    return `+55${digits}`;
+  }
+
+  getMessagingConfig() {
+    try {
+      return JSON.parse(localStorage.getItem('app_financeiro_messaging_cfg') || '{}');
+    } catch (_) {
+      return {};
+    }
+  }
+
+  saveMessagingConfig(cfg) {
+    try {
+      localStorage.setItem('app_financeiro_messaging_cfg', JSON.stringify(cfg || {}));
+    } catch (_) {}
+  }
+
+  // Envia código de 6 dígitos para o Gmail via EmailJS (se configurado) ou dispara e-mail nativo do Firebase
+  async dispatchCodeViaGmail(targetEmail, code, mode = '2fa') {
+    await this.init();
+    const cfg = this.getMessagingConfig();
+
+    // 1. Se o EmailJS gratuito estiver configurado, envia o código de 6 dígitos direto para a caixa de entrada do Gmail
+    if (cfg.emailjsServiceId && cfg.emailjsTemplateId && cfg.emailjsPublicKey) {
+      const resp = await fetch('https://api.emailjs.com/api/v1.0/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          service_id: cfg.emailjsServiceId,
+          template_id: cfg.emailjsTemplateId,
+          user_id: cfg.emailjsPublicKey,
+          template_params: {
+            to_email: targetEmail,
+            verification_code: code,
+            app_name: 'Ciclo Financeiro'
+          }
+        })
+      });
+      if (!resp.ok) {
+        throw new Error('Falha ao enviar código pelo EmailJS. Verifique as chaves configuradas.');
+      }
+      return { method: 'emailjs_code', destination: targetEmail };
+    }
+
+    // 2. Envio nativo 100% gratuito do próprio Firebase direto para o Gmail do usuário
+    if (mode === 'forgot') {
+      await this.sendPasswordResetEmail(this.auth, targetEmail);
+      return { method: 'firebase_reset_link', destination: targetEmail };
+    }
+
+    if (this.auth.currentUser) {
+      await this.sendEmailVerification(this.auth.currentUser);
+      return { method: 'firebase_verify_link', destination: targetEmail };
+    }
+
+    throw new Error('Configure o EmailJS gratuito nas Configurações para enviar códigos de 6 dígitos por e-mail.');
+  }
+
+  async checkFirebaseEmailVerified() {
+    await this.init();
+    if (!this.auth.currentUser) return false;
+    await this.auth.currentUser.reload();
+    return Boolean(this.auth.currentUser.emailVerified);
+  }
+
+  // Envia SMS real de 6 dígitos usando o Firebase Phone Auth (PhoneAuthProvider)
+  async dispatchCodeViaSms(rawPhone) {
+    await this.init();
+    const e164 = this._formatE164Brazil(rawPhone);
+    if (!e164 || e164.length < 12) {
+      throw new Error('Número de telefone inválido. Informe com DDD, ex: (11) 99999-9999.');
+    }
+
+    let container = document.getElementById('firebase-recaptcha-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'firebase-recaptcha-container';
+      document.body.appendChild(container);
+    }
+
+    if (!this.recaptchaVerifier) {
+      this.recaptchaVerifier = new this.RecaptchaVerifier(this.auth, 'firebase-recaptcha-container', {
+        size: 'invisible'
+      });
+    }
+
+    const provider = new this.PhoneAuthProvider(this.auth);
+    this.smsVerificationId = await provider.verifyPhoneNumber(e164, this.recaptchaVerifier);
+    return { method: 'firebase_sms', destination: e164 };
+  }
+
+  // Envia código de 6 dígitos via API de WhatsApp (CallMeBot / Webhook / Cloud API)
+  async dispatchCodeViaWhatsApp(rawPhone, code) {
+    const cfg = this.getMessagingConfig();
+    const e164 = this._formatE164Brazil(rawPhone).replace('+', '');
+    if (!e164 || e164.length < 11) {
+      throw new Error('Número de WhatsApp inválido. Informe com DDD.');
+    }
+
+    if (cfg.whatsappWebhookUrl) {
+      const url = cfg.whatsappWebhookUrl
+        .replace('{phone}', encodeURIComponent(e164))
+        .replace('{code}', encodeURIComponent(code))
+        .replace('{text}', encodeURIComponent(`Seu codigo de verificacao Ciclo Financeiro e: ${code}`));
+      await fetch(url, { method: 'GET', mode: 'no-cors' });
+      return { method: 'whatsapp_api', destination: `+${e164}` };
+    }
+
+    throw new Error(
+      'Para envio automático no WhatsApp sem exibir na tela, é necessário configurar a chave gratuita do CallMeBot ou Webhook WhatsApp API.'
+    );
   }
 
   async _saveAccountLookup(uid, email, phone, password) {
@@ -172,7 +308,6 @@ export class FinanceAuthAndStorageService {
       }
     }
 
-    // Caso a conta tenha sido criada antes de registrar recoveryToken, atualiza o registro local/cloud
     await this._saveAccountLookup(record.uid || 'local', targetEmail, record.phone || '', newPassword);
     return { updatedInCloud: true, email: targetEmail };
   }
