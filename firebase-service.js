@@ -4,6 +4,15 @@
 const STORAGE_KEY = 'app_financeiro_state_v1';
 const FIREBASE_CONFIG_KEY = 'app_financeiro_firebase_config_v1';
 
+export const DEFAULT_FIREBASE_CONFIG = {
+  apiKey: "AIzaSyBJ8Jb0w6ETxfEaLtChY6_VIOYlBDijFuk",
+  authDomain: "financeiro-353c3.firebaseapp.com",
+  projectId: "financeiro-353c3",
+  storageBucket: "financeiro-353c3.firebasestorage.app",
+  messagingSenderId: "952320326087",
+  appId: "1:952320326087:web:3a57c0ce93690d6fe481e2"
+};
+
 export class FinanceStorageService {
   constructor(onRemoteUpdate) {
     this.onRemoteUpdate = onRemoteUpdate;
@@ -17,10 +26,9 @@ export class FinanceStorageService {
   getSavedFirebaseConfig() {
     try {
       const raw = localStorage.getItem(FIREBASE_CONFIG_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (e) {
-      return null;
-    }
+      if (raw) return JSON.parse(raw);
+    } catch (e) {}
+    return DEFAULT_FIREBASE_CONFIG;
   }
 
   saveFirebaseConfig(configObj) {
