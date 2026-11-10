@@ -145,6 +145,39 @@ export class FinanceAuthAndStorageService {
     await this.signOut(this.auth);
   }
 
+  async updateUserProfile({ name, age }) {
+    await this.init();
+    const user = this.auth && this.auth.currentUser;
+    if (!user) throw new Error('Usuário não autenticado');
+
+    if (name) {
+      try {
+        await this.updateProfile(user, { displayName: name });
+      } catch (e) {
+        console.warn('Erro ao atualizar displayName:', e);
+      }
+    }
+
+    const updated = {
+      ...(this.userProfile || {}),
+      uid: user.uid,
+      email: user.email,
+      name: name || (this.userProfile && this.userProfile.name) || 'Usuário',
+      age: age !== undefined && age !== '' && !isNaN(Number(age)) ? Number(age) : null,
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      await this.setDoc(this.doc(this.db, 'users', user.uid), updated, { merge: true });
+    } catch (e) {
+      console.warn('Erro ao atualizar perfil no Firestore:', e);
+    }
+
+    localStorage.setItem(`${PROFILE_KEY_PREFIX}${user.uid}`, JSON.stringify(updated));
+    this.userProfile = updated;
+    return updated;
+  }
+
   async loadUserProfile(uid) {
     try {
       const snap = await this.getDoc(this.doc(this.db, 'users', uid));

@@ -26,7 +26,6 @@
         <div id="user-profile-badge" class="user-profile-badge" style="display: none">
           <div class="user-profile-info">
             <span id="user-display-name" class="user-profile-name">Carregando...</span>
-            <span id="user-display-meta" class="user-profile-meta"></span>
           </div>
           <button id="user-logout-btn" class="user-logout-btn" title="Sair da conta">Sair</button>
         </div>
@@ -87,12 +86,15 @@
       </div>
 
       <div class="sidebar-footer">
-        <button id="open-firebase-modal-btn" class="sync-status-btn">
+        <div class="sync-status-btn" title="Conta conectada">
           <span id="firebase-status-dot" class="status-dot"></span>
-          <span id="firebase-status-text">Modo Local (Conectar Firebase)</span>
-        </button>
-        <button id="clear-sample-btn" class="btn btn-secondary btn-sm" style="width: 100%">
-          Limpar Dados de Exemplo
+          <div class="sync-status-content">
+            <span class="sync-status-label">Online</span>
+            <span id="firebase-status-text">Não autenticado</span>
+          </div>
+        </div>
+        <button id="open-settings-btn" class="btn btn-secondary btn-sm" style="width: 100%">
+          &#9881;&#65039; Configurações
         </button>
       </div>
     </aside>
@@ -103,7 +105,7 @@
       <header class="topbar">
         <div class="page-header">
           <h2>Painel do Ciclo Financeiro</h2>
-          <p>Acompanhe entradas, gastos no Pix, faturas de cartões e dívidas em um único lugar.</p>
+          <p>Acompanhe entradas, gastos no Pix/Dinheiro, faturas de cartões, dívidas e cofrinho em um único lugar.</p>
         </div>
 
         <div class="topbar-controls">
@@ -130,7 +132,7 @@
 
         <div class="kpi-card">
           <div class="kpi-top">
-            <span>Gastos Fora de Cartão (Pix)</span>
+            <span>Gastos Fora de Cartão (Pix / Dinheiro)</span>
             <div class="kpi-icon pix">&#9889;</div>
           </div>
           <div id="kpi-pix" class="kpi-value">R$ 0,00</div>
@@ -164,13 +166,16 @@
 
       <!-- 1. TELA INICIAL: CICLO DO DINHEIRO -->
       <section id="overview-view" class="view-section active">
+        <!-- Painel de Alertas de Vencimento / Atrasos (abaixo dos KPIs) -->
+        <div id="due-alerts-panel" class="due-alerts-panel" style="display: none"></div>
+
         <div class="cycle-hero">
           <!-- Pie Chart Card -->
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
                 <h3>Gráfico do Ciclo do Dinheiro</h3>
-                <p>Suas entradas definem 100% do gráfico; as fatias mostram os gastos e o saldo que sobra.</p>
+                <p>Suas entradas definem 100% do gráfico; as fatias mostram os gastos, cofrinho e o saldo que sobra.</p>
               </div>
               <div class="segmented-control">
                 <button id="pie-mode-origin-btn" class="active" data-pie-mode="origin">Por Origem</button>
@@ -199,7 +204,7 @@
             <div class="panel-header">
               <div class="panel-title">
                 <h3>Raio-X do Ciclo Mensal</h3>
-                <p>Resumo de limites, faturas, Pix e parcelas ativas neste mês.</p>
+                <p>Resumo de limites, faturas, Pix/Dinheiro, dívidas e caixinhas neste mês.</p>
               </div>
             </div>
             <div id="overview-side-stats" class="cycle-stats-list"></div>
@@ -211,7 +216,7 @@
           <div class="panel-header">
             <div class="panel-title">
               <h3>Todas as Movimentações do Mês</h3>
-              <p>Histórico consolidado de entradas, pagamentos no Pix e compras nos cartões.</p>
+              <p>Histórico consolidado de entradas, pagamentos no Pix/Dinheiro, compras nos cartões e cofrinho.</p>
             </div>
           </div>
           <div class="table-wrap">
@@ -240,7 +245,7 @@
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
-                <h3>Novo Cartão de Crédito</h3>
+                <h3>Novo Cartão</h3>
                 <p>Registre limite total, dia de fechamento e dia de vencimento da fatura.</p>
               </div>
             </div>
@@ -253,7 +258,7 @@
                 <label for="card-limit">Limite Total do Cartão (R$)</label>
                 <input id="card-limit" class="form-control" type="number" step="0.01" min="1" placeholder="Ex: 5000.00" required />
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-row-2">
                 <div class="form-group">
                   <label for="card-closing">Dia do Fechamento</label>
                   <input id="card-closing" class="form-control" type="number" min="1" max="31" placeholder="Ex: 5" required />
@@ -277,12 +282,12 @@
             </form>
           </div>
 
-          <!-- Form: Lançar Compra na Fatura do Cartão -->
+          <!-- Form: Lançar Compra no Cartão (Crédito ou Débito) -->
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
-                <h3>Lançar Gasto na Fatura</h3>
-                <p>Adicione uma compra ou parcela na fatura do mês selecionado.</p>
+                <h3>Lançar Gasto no Cartão (Crédito ou Débito)</h3>
+                <p>Registre compras na fatura de crédito ou passadas na função débito do cartão.</p>
               </div>
             </div>
             <form id="form-add-card-expense" class="form-grid">
@@ -291,11 +296,18 @@
                 <select id="card-expense-cardId" class="form-control" required></select>
               </div>
               <div class="form-group">
+                <label for="card-expense-mode">Modalidade (Crédito ou Débito)</label>
+                <select id="card-expense-mode" class="form-control">
+                  <option value="credit">Crédito (Entra na Fatura)</option>
+                  <option value="debit">Débito (Desconta à vista)</option>
+                </select>
+              </div>
+              <div class="form-group">
                 <label for="card-expense-desc">Descrição da Compra</label>
                 <input id="card-expense-desc" class="form-control" type="text" placeholder="Ex: Mercado, Farmácia, Uber..." required />
               </div>
               <div class="form-group">
-                <label for="card-expense-amount">Valor na Fatura deste Mês (R$)</label>
+                <label for="card-expense-amount">Valor deste Mês (R$)</label>
                 <input id="card-expense-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 150.00" required />
               </div>
               <div class="form-group">
@@ -311,7 +323,7 @@
                   <option value="Outros">Outros</option>
                 </select>
               </div>
-              <div class="form-group">
+              <div id="card-installments-group" class="form-group">
                 <label for="card-expense-installments">Parcela (ex: 1x ou 2/6)</label>
                 <input id="card-expense-installments" class="form-control" type="text" placeholder="1x" value="1x" />
               </div>
@@ -321,7 +333,7 @@
               </div>
               <div class="form-group" style="grid-column: 1 / -1">
                 <button id="submit-card-expense-btn" type="submit" class="btn btn-primary" style="width: 100%">
-                  Registrar na Fatura
+                  Registrar Gasto no Cartão
                 </button>
               </div>
             </form>
@@ -332,8 +344,8 @@
         <div class="panel">
           <div class="panel-header">
             <div class="panel-title">
-              <h3>Itens Lançados nas Faturas do Mês</h3>
-              <p>Todos os gastos registrados nos seus cartões de crédito neste período.</p>
+              <h3>Itens Lançados nos Cartões neste Mês</h3>
+              <p>Todos os gastos no crédito (fatura) e no débito registrados neste período.</p>
             </div>
           </div>
           <div class="table-wrap">
@@ -342,6 +354,7 @@
                 <tr>
                   <th>Descrição</th>
                   <th>Cartão</th>
+                  <th>Modalidade</th>
                   <th>Categoria</th>
                   <th>Parcela</th>
                   <th>Valor</th>
@@ -354,29 +367,29 @@
         </div>
       </section>
 
-      <!-- 3. ÁREA DE GASTOS NO PIX (FORA DOS CARTÕES) E ENTRADAS -->
+      <!-- 3. ÁREA DE GASTOS NO PIX / DINHEIRO E ENTRADAS -->
       <section id="pix-view" class="view-section">
         <div class="split-grid" style="margin-bottom: 24px">
           <!-- Form: Registrar Gasto no Pix -->
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
-                <h3>Registrar Gasto no Pix / Débito</h3>
-                <p>Registre seus gastos fora dos cartões (Pix, transferências, dinheiro à vista).</p>
+                <h3>Registrar Gasto no Pix / Dinheiro (Cédulas)</h3>
+                <p>Registre seus gastos fora dos cartões (Pix, dinheiro em espécie/cédulas, transferências).</p>
               </div>
             </div>
             <form id="form-add-pix" class="form-grid" style="grid-template-columns: 1fr">
               <div class="form-group">
                 <label for="pix-desc">O que foi pago?</label>
-                <input id="pix-desc" class="form-control" type="text" placeholder="Ex: Aluguel, Conta de Luz, Padaria no Pix..." required />
+                <input id="pix-desc" class="form-control" type="text" placeholder="Ex: Aluguel, Conta de Luz, Padaria em Dinheiro..." required />
               </div>
               <div class="form-group">
-                <label for="pix-recipient">Destinatário / Observação (Opcional)</label>
-                <input id="pix-recipient" class="form-control" type="text" placeholder="Ex: Imobiliária, Enel, Feira..." />
+                <label for="pix-recipient">Destinatário / Meio (Pix ou Dinheiro)</label>
+                <input id="pix-recipient" class="form-control" type="text" placeholder="Ex: Pix Imobiliária, Dinheiro (Cédulas)..." />
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-row-2">
                 <div class="form-group">
-                  <label for="pix-amount">Valor do Pix (R$)</label>
+                  <label for="pix-amount">Valor (R$)</label>
                   <input id="pix-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" required />
                 </div>
                 <div class="form-group">
@@ -396,7 +409,7 @@
                 <label for="pix-date">Data do Pagamento</label>
                 <input id="pix-date" class="form-control" type="date" required />
               </div>
-              <button id="submit-pix-btn" type="submit" class="btn btn-primary">Salvar Gasto no Pix</button>
+              <button id="submit-pix-btn" type="submit" class="btn btn-primary">Salvar Gasto (Pix / Dinheiro)</button>
             </form>
           </div>
 
@@ -413,7 +426,7 @@
                 <label for="income-desc">Descrição da Entrada</label>
                 <input id="income-desc" class="form-control" type="text" placeholder="Ex: Salário, Pix Cliente, Venda, Rendimento..." required />
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-row-2">
                 <div class="form-group">
                   <label for="income-amount">Valor Recebido (R$)</label>
                   <input id="income-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" required />
@@ -462,7 +475,7 @@
         <div class="panel" style="margin-bottom: 24px">
           <div class="panel-header">
             <div class="panel-title">
-              <h3>Histórico de Gastos no Pix (Fora de Cartão)</h3>
+              <h3>Histórico de Gastos Fora de Cartão (Pix / Dinheiro)</h3>
               <p>Todos os pagamentos diretos efetuados neste mês.</p>
             </div>
             <span id="pix-total-badge" class="tag pix" style="font-family: var(--font-mono); font-size: 0.9rem">R$ 0,00</span>
@@ -472,7 +485,7 @@
               <thead>
                 <tr>
                   <th>Descrição</th>
-                  <th>Destinatário</th>
+                  <th>Destinatário / Meio</th>
                   <th>Categoria</th>
                   <th>Data</th>
                   <th>Valor</th>
@@ -524,7 +537,7 @@
                 <label for="debt-creditor">Credor / Nome da Dívida</label>
                 <input id="debt-creditor" class="form-control" type="text" placeholder="Ex: Empréstimo, Financiamento, Acordo..." required />
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-row-2">
                 <div class="form-group">
                   <label for="debt-total">Valor Total da Dívida (R$)</label>
                   <input id="debt-total" class="form-control" type="number" step="0.01" min="1" placeholder="Ex: 3000.00" required />
@@ -534,7 +547,7 @@
                   <input id="debt-paid" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 0.00" value="0" />
                 </div>
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-row-2">
                 <div class="form-group">
                   <label for="debt-installment">Parcela Mensal (R$)</label>
                   <input id="debt-installment" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 300.00" required />
@@ -544,7 +557,7 @@
                   <input id="debt-total-months" class="form-control" type="number" min="1" max="360" placeholder="Ex: 10" value="10" required />
                 </div>
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-row-2">
                 <div class="form-group">
                   <label for="debt-start-month">Mês de Início</label>
                   <input id="debt-start-month" class="form-control" type="month" required />
@@ -562,7 +575,7 @@
             <div class="panel-header">
               <div class="panel-title">
                 <h3>Minhas Dívidas &amp; Pendências</h3>
-                <p>Clique em "+ Pagar Parcela" para abater o valor mensal automaticamente.</p>
+                <p>Confirme manualmente o pagamento do mês ou abata parcelas do saldo total.</p>
               </div>
             </div>
             <div class="table-wrap">
@@ -583,25 +596,27 @@
             </div>
           </div>
         </div>
+      </section>
+
       <!-- 5. ÁREA DE COFRINHO & RESERVAS FINANCEIRAS -->
       <section id="vault-view" class="view-section">
         <!-- KPI Strip do Cofrinho -->
         <div class="kpi-grid" style="margin-bottom: 24px">
           <div class="kpi-card">
             <div class="kpi-top">
-              <span>Total Guardado no Cofrinho</span>
+              <span>Total Guardado nas Caixinhas</span>
               <div class="kpi-icon income">&#128176;</div>
             </div>
             <div id="vault-total-saved" class="kpi-value" style="color: var(--emerald)">R$ 0,00</div>
-            <div class="kpi-sub"><span>Patrimônio reservado</span></div>
+            <div class="kpi-sub"><span>Patrimônio acumulado</span></div>
           </div>
           <div class="kpi-card">
             <div class="kpi-top">
-              <span>Depósitos Realizados</span>
+              <span>Guardado neste Mês (Descontado do Bruto)</span>
               <div class="kpi-icon pix">&#8593;</div>
             </div>
             <div id="vault-total-in" class="kpi-value">R$ 0,00</div>
-            <div class="kpi-sub"><span>Total adicionado</span></div>
+            <div class="kpi-sub"><span>Confirmado pelo usuário</span></div>
           </div>
           <div class="kpi-card">
             <div class="kpi-top">
@@ -613,98 +628,137 @@
           </div>
           <div class="kpi-card">
             <div class="kpi-top">
-              <span>Metas / Caixinhas Ativas</span>
+              <span>Caixinhas Ativas</span>
               <div class="kpi-icon net">&#127919;</div>
             </div>
             <div id="vault-active-goals" class="kpi-value">0</div>
-            <div class="kpi-sub"><span>Reservas criadas</span></div>
+            <div class="kpi-sub"><span id="vault-pending-alerts-sub">0 com atraso no mês</span></div>
           </div>
         </div>
 
         <div class="split-grid" style="margin-bottom: 24px">
-          <!-- Form: Criar Nova Caixinha / Cofrinho -->
+          <!-- Form: Criar Caixinha -->
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
-                <h3>Criar Nova Reserva / Caixinha</h3>
-                <p>Ex: Reserva de Emergência, Viagem, Carro, Investimento...</p>
+                <h3>Criar Caixinha (Cofrinho)</h3>
+                <p>Defina nome, descrição, valor mínimo mensal e o dia limite para alerta caso não deposite.</p>
               </div>
             </div>
             <form id="form-add-vault-goal" class="form-grid" style="grid-template-columns: 1fr">
               <div class="form-group">
-                <label for="vault-goal-name">Nome do Cofrinho</label>
-                <input id="vault-goal-name" class="form-control" type="text" placeholder="Ex: Reserva de Emergência" required />
+                <label for="vault-goal-name">Nome da Caixinha</label>
+                <input id="vault-goal-name" class="form-control" type="text" placeholder="Ex: Reserva de Emergência, Viagem..." required />
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-group">
+                <label for="vault-goal-desc">Descrição / Objetivo</label>
+                <input id="vault-goal-desc" class="form-control" type="text" placeholder="Ex: Guardar todo mês para imprevistos..." required />
+              </div>
+              <div class="form-row-2">
                 <div class="form-group">
-                  <label for="vault-target-amount">Meta Desejada (R$ - opcional)</label>
+                  <label for="vault-min-monthly">Valor Mínimo por Mês (R$)</label>
+                  <input id="vault-min-monthly" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 200.00" required />
+                </div>
+                <div class="form-group">
+                  <label for="vault-due-day">Dia Limite Mensal (Alerta !)</label>
+                  <input id="vault-due-day" class="form-control" type="number" min="1" max="31" placeholder="Ex: 10" value="10" required />
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="vault-target-amount">Meta Total (R$ - opcional)</label>
                   <input id="vault-target-amount" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 10000.00" />
                 </div>
                 <div class="form-group">
-                  <label for="vault-initial-balance">Saldo Inicial Guardado (R$)</label>
-                  <input id="vault-initial-balance" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 500.00" value="0" />
+                  <label for="vault-initial-balance">Saldo Inicial Já Guardado (R$)</label>
+                  <input id="vault-initial-balance" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" value="0" />
                 </div>
               </div>
-              <button id="submit-vault-goal-btn" type="submit" class="btn btn-primary">Salvar Cofrinho</button>
+              <button id="submit-vault-goal-btn" type="submit" class="btn btn-primary">+ Criar Caixinha</button>
             </form>
           </div>
 
-          <!-- Form: Movimentar Cofrinho (Depositar ou Resgatar Manualmente) -->
+          <!-- Form: Registrar Depósito Mensal ou Resgate na Caixinha -->
           <div class="panel">
             <div class="panel-header">
               <div class="panel-title">
-                <h3>Movimentar Cofrinho (Manual)</h3>
-                <p>Guarde mais dinheiro ou registre um resgate manual quando precisar.</p>
+                <h3>Registrar Depósito do Mês / Resgate</h3>
+                <p>O valor guardado só é descontado do valor bruto após sua confirmação abaixo.</p>
               </div>
             </div>
             <form id="form-vault-movement" class="form-grid" style="grid-template-columns: 1fr">
               <div class="form-group">
-                <label for="vault-move-goalId">Qual Cofrinho?</label>
+                <label for="vault-move-goalId">Selecionar Caixinha</label>
                 <select id="vault-move-goalId" class="form-control" required></select>
               </div>
-              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+              <div class="form-row-2">
                 <div class="form-group">
-                  <label for="vault-move-type">Tipo de Operação</label>
+                  <label for="vault-move-type">Operação</label>
                   <select id="vault-move-type" class="form-control">
-                    <option value="deposit">Depositar / Guardar (+)</option>
-                    <option value="withdraw">Resgatar / Sacar (-)</option>
+                    <option value="deposit">Guardar no Mês (Desconta do Bruto)</option>
+                    <option value="withdraw">Resgatar / Sacar da Caixinha</option>
                   </select>
                 </div>
                 <div class="form-group">
-                  <label for="vault-move-amount">Valor (R$)</label>
-                  <input id="vault-move-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 100.00" required />
+                  <label for="vault-move-amount">Quanto colocou / resgatou (R$)</label>
+                  <input id="vault-move-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 200.00" required />
                 </div>
               </div>
-              <div class="form-group">
-                <label for="vault-move-desc">Motivo / Descrição</label>
-                <input id="vault-move-desc" class="form-control" type="text" placeholder="Ex: Sobra do salário, Rendimento..." required />
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="vault-move-desc">Observação</label>
+                  <input id="vault-move-desc" class="form-control" type="text" placeholder="Ex: Depósito de Novembro" required />
+                </div>
+                <div class="form-group">
+                  <label for="vault-move-date">Data</label>
+                  <input id="vault-move-date" class="form-control" type="date" required />
+                </div>
               </div>
-              <div class="form-group">
-                <label for="vault-move-date">Data</label>
-                <input id="vault-move-date" class="form-control" type="date" required />
-              </div>
-              <button id="submit-vault-move-btn" type="submit" class="btn btn-primary">Confirmar Movimentação</button>
+              <button id="submit-vault-move-btn" type="submit" class="btn btn-primary">Confirmar e Registrar na Caixinha</button>
             </form>
           </div>
         </div>
 
-        <!-- Cards das Caixinhas do Cofrinho -->
-        <div id="vault-goals-container" class="cards-grid" style="margin-bottom: 24px"></div>
-
-        <!-- Histórico de Depósitos e Resgates -->
-        <div class="panel">
+        <!-- Tabela de Caixinhas e Controle Mensal -->
+        <div class="panel" style="margin-bottom: 24px">
           <div class="panel-header">
             <div class="panel-title">
-              <h3>Histórico de Entradas e Resgates do Cofrinho</h3>
-              <p>Registro manual de todas as economias guardadas.</p>
+              <h3>Minhas Caixinhas (Controle Mês a Mês)</h3>
+              <p>Acompanhe o valor mínimo mensal, a data de alerta e confirme manualmente quanto guardou neste mês.</p>
             </div>
           </div>
           <div class="table-wrap">
             <table class="data-table">
               <thead>
                 <tr>
-                  <th>Descrição</th>
-                  <th>Cofrinho</th>
+                  <th>Caixinha / Descrição</th>
+                  <th>Mínimo Mensal</th>
+                  <th>Data Alerta</th>
+                  <th>Colocado no Mês</th>
+                  <th>Total Acumulado</th>
+                  <th>Status no Mês</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="vault-goals-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Histórico de Depósitos e Resgates -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <h3>Histórico de Movimentações das Caixinhas</h3>
+              <p>Todos os depósitos confirmados (descontados do bruto no mês) e resgates.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Observação</th>
+                  <th>Caixinha</th>
                   <th>Operação</th>
                   <th>Data</th>
                   <th>Valor</th>
@@ -719,49 +773,38 @@
     </main>
   </div>
 
-  <!-- Modal de Configuração do Firebase -->
-  <div id="firebase-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="firebase-modal-title">
+  <!-- Modal de Configurações do Usuário -->
+  <div id="settings-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
     <div class="modal-card">
       <div class="modal-header">
-        <h3 id="firebase-modal-title">Conexão com Firebase Firestore</h3>
-        <button id="close-firebase-modal-btn" class="close-btn" aria-label="Fechar">&times;</button>
+        <h3 id="settings-modal-title">&#9881;&#65039; Configurações da Conta</h3>
+        <button id="close-settings-modal-btn" class="close-btn" aria-label="Fechar">&times;</button>
       </div>
 
-      <div class="info-callout">
-        <strong>Posso usar o Firebase mesmo já tendo o projeto do app Pulso?</strong><br />
-        <strong>Sim!</strong> Você tem duas opções gratuitas na mesma conta Google:
-        <ol style="margin: 6px 0 0 18px">
-          <li><strong>Recomendado:</strong> No <a href="https://console.firebase.google.com" target="_blank" rel="noopener" style="color: var(--emerald)">Firebase Console</a>, clique em <em>"Adicionar projeto"</em> e crie um projeto separado (ex: <code>app-financeiro</code>). O plano gratuito (Spark) permite vários projetos independentes na mesma conta!</li>
-          <li><strong>Alternativa:</strong> Usar o mesmo projeto do Pulso — este site grava tudo na coleção exclusiva <code>app_financeiro_ciclo</code>, sem misturar com as coleções do Pulso.</li>
-        </ol>
-      </div>
-
-      <form id="form-firebase-config" class="form-grid" style="grid-template-columns: 1fr">
+      <form id="form-user-settings" class="form-grid" style="grid-template-columns: 1fr">
         <div class="form-group">
-          <label for="fb-api-key">apiKey</label>
-          <input id="fb-api-key" class="form-control" type="text" placeholder="AIzaSy..." required />
+          <label for="settings-name">Seu Nome de Exibição</label>
+          <input id="settings-name" class="form-control" type="text" placeholder="Seu nome" required />
         </div>
-        <div class="form-group">
-          <label for="fb-auth-domain">authDomain</label>
-          <input id="fb-auth-domain" class="form-control" type="text" placeholder="seu-projeto.firebaseapp.com" />
-        </div>
-        <div class="form-group">
-          <label for="fb-project-id">projectId</label>
-          <input id="fb-project-id" class="form-control" type="text" placeholder="seu-projeto-id" required />
-        </div>
-        <div class="form-group">
-          <label for="fb-app-id">appId</label>
-          <input id="fb-app-id" class="form-control" type="text" placeholder="1:123456789:web:abcdef" />
+        <div class="form-row-2">
+          <div class="form-group">
+            <label for="settings-age">Sua Idade</label>
+            <input id="settings-age" class="form-control" type="number" min="1" max="120" placeholder="Ex: 18" />
+          </div>
+          <div class="form-group">
+            <label for="settings-email">E-mail / Gmail (Login)</label>
+            <input id="settings-email" class="form-control" type="email" disabled />
+          </div>
         </div>
 
-        <p id="firebase-modal-feedback" style="font-size: 0.82rem; min-height: 20px"></p>
+        <p id="settings-feedback" style="font-size: 0.82rem; min-height: 20px"></p>
 
-        <div style="display: flex; gap: 10px">
-          <button id="save-firebase-btn" type="submit" class="btn btn-primary" style="flex: 1">
-            Conectar e Sincronizar
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <button id="save-settings-btn" type="submit" class="btn btn-primary" style="flex: 1">
+            Salvar Alterações
           </button>
-          <button id="disconnect-firebase-btn" type="button" class="btn btn-secondary">
-            Usar Só Local
+          <button id="reset-all-data-btn" type="button" class="btn btn-danger" title="Apaga todos os lançamentos desta conta">
+            Zerar Todos os Dados
           </button>
         </div>
       </form>

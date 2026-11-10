@@ -1186,10 +1186,21 @@ body {
   background-color: var(--coral-soft);
 }
 
-/* ===== Correções de overflow dos campos (textbox saindo do painel) ===== */
+/* ===== Correções de overflow dos campos (textbox saindo do painel) e botões ===== */
 .form-control {
   width: 100%;
   min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.form-grid {
+  width: 100%;
+  min-width: 0;
+}
+
+.form-grid > .btn {
+  width: 100%;
   max-width: 100%;
 }
 
@@ -1199,27 +1210,42 @@ body {
 .cycle-hero > *,
 .panel {
   min-width: 0;
+  max-width: 100%;
 }
 
-/* Linhas de 2 colunas dentro dos formulários (substitui grids inline) */
+.panel {
+  overflow: hidden;
+}
+
+/* Linhas de 2 colunas dentro dos formulários */
 .form-grid > div[style*="grid-template-columns"],
 .auth-form > div[style*="grid-template-columns"],
 .form-row-2 {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) !important;
   gap: 12px;
+  width: 100%;
+  min-width: 0;
 }
 
-@media (max-width: 520px) {
+/* Em telas intermediárias onde o painel lateral tem 380px, empilha linhas de 2 colunas se ficarem apertadas */
+@media (max-width: 1180px) {
+  .split-grid .form-row-2 {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
+
+@media (max-width: 560px) {
   .form-grid > div[style*="grid-template-columns"],
   .form-row-2 {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
 
-/* Badge do usuário: texto longo (e-mail) não estoura mais */
+/* Badge do usuário no topo da sidebar (apenas Nome + Sair) */
 .user-profile-badge {
   gap: 8px;
+  min-width: 0;
 }
 
 .user-profile-info {
@@ -1227,9 +1253,7 @@ body {
   flex: 1;
 }
 
-.user-profile-name,
-.user-profile-meta,
-#firebase-status-text {
+.user-profile-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -1240,8 +1264,42 @@ body {
   flex-shrink: 0;
 }
 
+/* Box de status Online + Gmail no rodapé da sidebar sem vazar */
 .sync-status-btn {
   min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  cursor: default;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 12px;
+}
+
+.sync-status-content {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+  line-height: 1.25;
+}
+
+.sync-status-label {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--emerald);
+  font-weight: 700;
+}
+
+#firebase-status-text {
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  max-width: 100%;
 }
 
 /* Caixa de recorrência do salário */
@@ -1253,6 +1311,7 @@ body {
   border-radius: var(--radius-md);
   background-color: var(--bg-secondary);
   border: 1px solid var(--border-subtle);
+  min-width: 0;
 }
 
 .recurring-title {
@@ -1272,8 +1331,109 @@ body {
   text-decoration: line-through;
 }
 
+.tag.vault {
+  background-color: rgba(16, 185, 129, 0.18);
+  color: #34d399;
+}
+
 .row-actions {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  align-items: center;
 }
+
+/* ===== Painel de Alertas de Vencimento / Atrasos (em vermelho abaixo dos KPIs) ===== */
+.due-alerts-panel {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.16), rgba(15, 20, 25, 0.92));
+  border: 1px solid rgba(244, 63, 94, 0.45);
+  border-radius: var(--radius-lg);
+  padding: 18px 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px -4px rgba(244, 63, 94, 0.2);
+}
+
+.due-alerts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.due-alerts-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fecdd3;
+  font-weight: 700;
+  font-size: 0.98rem;
+}
+
+.due-exclamation-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background-color: var(--coral);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.88rem;
+  flex-shrink: 0;
+  box-shadow: 0 0 10px rgba(244, 63, 94, 0.6);
+}
+
+.due-alerts-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.due-alert-card {
+  background-color: rgba(28, 37, 46, 0.9);
+  border: 1px solid rgba(244, 63, 94, 0.4);
+  border-left: 4px solid var(--coral);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.due-alert-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.due-alert-info strong {
+  display: block;
+  color: #ffe4e6;
+  font-size: 0.88rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.due-alert-info span {
+  display: block;
+  color: #fda4af;
+  font-size: 0.76rem;
+  margin-top: 2px;
+}
+
+.due-alert-amount {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--coral);
+  font-size: 0.92rem;
+  white-space: nowrap;
+}
+
+.row-due-danger td {
+  background-color: rgba(244, 63, 94, 0.08) !important;
+}
+
