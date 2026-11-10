@@ -1434,14 +1434,51 @@ function renderDebtsView() {
   });
 }
 
+let lastActiveTabBeforeSettings = 'overview-view';
+let drawerCloseTimer = null;
+
+function openFormDrawer(drawerId) {
+  const backdrop = document.getElementById('form-drawer-backdrop');
+  if (!backdrop) return;
+  if (drawerCloseTimer) {
+    clearTimeout(drawerCloseTimer);
+    drawerCloseTimer = null;
+  }
+  document.querySelectorAll('#form-drawer-backdrop .form-drawer-content').forEach((el) => {
+    el.classList.toggle('active', el.id === drawerId);
+  });
+  backdrop.classList.remove('closing');
+  backdrop.classList.add('open');
+  backdrop.setAttribute('aria-hidden', 'false');
+}
+
+function closeFormDrawer() {
+  const backdrop = document.getElementById('form-drawer-backdrop');
+  if (!backdrop || !backdrop.classList.contains('open')) return;
+  backdrop.classList.add('closing');
+  backdrop.setAttribute('aria-hidden', 'true');
+  if (drawerCloseTimer) clearTimeout(drawerCloseTimer);
+  drawerCloseTimer = setTimeout(() => {
+    backdrop.classList.remove('open', 'closing');
+    drawerCloseTimer = null;
+  }, 310);
+}
+
 // Navigation Tab Switcher
 function switchTab(targetId) {
+  if (targetId && targetId !== 'settings-view') {
+    lastActiveTabBeforeSettings = targetId;
+  }
   document.querySelectorAll('.view-section').forEach((sec) => {
     sec.classList.toggle('active', sec.id === targetId);
   });
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-target') === targetId);
   });
+  const gearBtn = document.getElementById('open-settings-btn');
+  if (gearBtn) {
+    gearBtn.classList.toggle('active', targetId === 'settings-view');
+  }
 }
 
 // Render Cofrinho & Reservas (Caixinhas com valor mínimo mensal, confirmação manual e alerta de atraso)
