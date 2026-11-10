@@ -8,30 +8,14 @@ const currentMonthKey = () => {
 const todayISO = () => new Date().toISOString().split('T')[0];
 
 const getInitialSeedData = () => {
-  const ym = currentMonthKey();
   return {
-    incomes: [
-      { id: 'inc-1', description: 'Salário Principal', amount: 5200, category: 'Salário', date: `${ym}-05`, month: ym },
-      { id: 'inc-2', description: 'Projeto Freelance / Extra', amount: 1300, category: 'Renda Extra', date: `${ym}-15`, month: ym }
-    ],
-    cards: [
-      { id: 'card-nubank', name: 'Nubank Ultravioleta', limit: 6000, closingDay: 3, dueDay: 10, color: '#0f766e', paidMonths: [] },
-      { id: 'card-inter', name: 'Banco Inter Black', limit: 4500, closingDay: 12, dueDay: 20, color: '#c2410c', paidMonths: [] }
-    ],
-    cardExpenses: [
-      { id: 'ce-1', cardId: 'card-nubank', description: 'Supermercado Mensal', amount: 890.50, category: 'Alimentação', installments: '1x', date: `${ym}-06`, month: ym },
-      { id: 'ce-2', cardId: 'card-nubank', description: 'Combustível e Manutenção', amount: 420.00, category: 'Transporte', installments: '1x', date: `${ym}-08`, month: ym },
-      { id: 'ce-3', cardId: 'card-inter', description: 'Notebook (Parcela 3/10)', amount: 350.00, category: 'Eletrônicos', installments: '3/10', date: `${ym}-11`, month: ym },
-      { id: 'ce-4', cardId: 'card-inter', description: 'Streaming & Internet', amount: 189.90, category: 'Assinaturas', installments: '1x', date: `${ym}-12`, month: ym }
-    ],
-    pixExpenses: [
-      { id: 'pix-1', description: 'Aluguel + Condomínio', recipient: 'Imobiliária Central', amount: 1650.00, category: 'Moradia', date: `${ym}-05`, month: ym },
-      { id: 'pix-2', description: 'Conta de Energia + Água', recipient: 'Concessionária', amount: 285.40, category: 'Contas Fixas', date: `${ym}-07`, month: ym },
-      { id: 'pix-3', description: 'Feira e Açougue no Pix', recipient: 'Mercado Local', amount: 240.00, category: 'Alimentação', date: `${ym}-09`, month: ym }
-    ],
-    debts: [
-      { id: 'debt-1', creditor: 'Empréstimo Pessoal Banco', totalAmount: 4800.00, paidAmount: 1600.00, monthlyInstallment: 400.00, dueDate: `${ym}-18`, status: 'Ativa', includeInCycle: true }
-    ]
+    incomes: [],
+    cards: [],
+    cardExpenses: [],
+    pixExpenses: [],
+    debts: [],
+    vaultGoals: [],
+    vaultMovements: []
   };
 };
 
@@ -56,7 +40,9 @@ const authService = new FinanceAuthAndStorageService(
         cards: remoteData.cards || [],
         cardExpenses: remoteData.cardExpenses || [],
         pixExpenses: remoteData.pixExpenses || [],
-        debts: remoteData.debts || []
+        debts: remoteData.debts || [],
+        vaultGoals: remoteData.vaultGoals || [],
+        vaultMovements: remoteData.vaultMovements || []
       };
       renderAll();
     }
@@ -121,7 +107,27 @@ function getMonthSummary(ym) {
   const incomes = state.incomes.filter((i) => i.month === ym);
   const pixExpenses = state.pixExpenses.filter((p) => p.month === ym);
   const cardExpenses = state.cardExpenses.filter((c) => c.month === ym);
-  const activeDebts = state.debts.filter((d) => d.status !== 'Quitada' && d.includeInCycle);
+
+  // Auto preenchimento mensal de dívidas ativas:
+  // Se a dívida dura N meses (ex: 10 meses a partir do mês X),
+  // ela aparece em todo mês do intervalo até ser quitada 100% ou excluída.
+  const activeDebts = state.debts.filter((d) => {
+    const remaining = Math.max(0, Number(d.totalAmount || 0) - Number(d.paidAmount || 0));
+    if (remaining <= 0 || d.status === 'Quitada') return false;
+
+    // Se possui mês de início definido
+    if (d.startMonth) {
+      if (ym < d.startMonth) return false; // Ainda não começou
+      if (d.totalMonths && Number(d.totalMonths) > 0) {
+        // Calcula até qual mês a dívida se estende
+        const [sy, sm] = d.startMonth.split('-').map(Number);
+        const [cy, cm] = ym.split('-').map(Number);
+        const diffMonths = (cy - sy) * 12 + (cm - sm);
+        if (diffMonths >= Number(d.totalMonths)) return false; // Passou dos N meses
+      }
+    }
+    return d.includeInCycle !== false;
+  });
 
   const totalIncome = incomes.reduce((acc, i) => acc + Number(i.amount || 0), 0);
   const totalPix = pixExpenses.reduce((acc, p) => acc + Number(p.amount || 0), 0);
@@ -641,22 +647,41 @@ function renderDebtsView() {
       const pctPaid = d.totalAmount > 0 ? Math.min(100, Math.round((d.paidAmount / d.totalAmount) * 100)) : 100;
       const isQuitada = remaining <= 0 || d.status === 'Quitada';
 
+      // Verifica se o usuário marcou a parcela deste mês como paga
+      const paidMonthsList = Array.isArray(d.paidMonths) ? d.paidMonths : [];
+      const isPaidInThisMonth = paidMonthsList.includes(selectedMonth);
+
+      const monthsInfo = d.totalMonths ? ` (${d.totalMonths} meses previstos)` : '';
+      const startInfo = d.startMonth ? `Início: ${formatMonthLabel(d.startMonth)}` : '';
+
       return `
         <tr>
           <td>
             <strong>${d.creditor}</strong>
-            <div style="font-size: 0.75rem; color: var(--text-secondary)">${pctPaid}% quitado</div>
+            <div style="font-size: 0.74rem; color: var(--text-secondary)">${startInfo}${monthsInfo} • ${pctPaid}% quitado</div>
           </td>
           <td style="font-family: var(--font-mono)">${formatBRL(d.totalAmount)}</td>
           <td style="font-family: var(--font-mono); color: var(--emerald)">${formatBRL(d.paidAmount)}</td>
           <td style="font-family: var(--font-mono); color: var(--coral); font-weight:700">${formatBRL(remaining)}</td>
-          <td style="font-family: var(--font-mono)">${formatBRL(d.monthlyInstallment)}/mês</td>
+          <td style="font-family: var(--font-mono)">
+            ${formatBRL(d.monthlyInstallment)}/mês
+            <div style="font-size: 0.72rem; color: ${isPaidInThisMonth ? 'var(--emerald)' : 'var(--amber)'}">
+              ${isPaidInThisMonth ? '✓ Parcela deste mês Paga' : '○ Parcela deste mês Pendente'}
+            </div>
+          </td>
           <td><span class="tag ${isQuitada ? 'income' : 'debt'}">${isQuitada ? 'Quitada' : 'Ativa'}</span></td>
           <td>
-            <div style="display:flex; gap:6px">
+            <div style="display:flex; gap:6px; flex-wrap: wrap">
               ${
                 !isQuitada
-                  ? `<button class="btn btn-primary btn-sm" data-pay-debt="${d.id}" title="Abater valor da parcela mensal">+ Pagar Parcela</button>`
+                  ? `
+                  <button class="btn ${isPaidInThisMonth ? 'btn-secondary' : 'btn-primary'} btn-sm" data-toggle-debt-month="${d.id}" title="Marcar manualmente se pagou ou não a parcela deste mês">
+                    ${isPaidInThisMonth ? 'Desmarcar Mês' : 'Pagar Mês Atual'}
+                  </button>
+                  <button class="btn btn-secondary btn-sm" data-pay-debt="${d.id}" title="Abater valor de 1 parcela do saldo devedor total">
+                    + Abater Saldo
+                  </button>
+                  `
                   : ''
               }
               <button class="btn btn-danger btn-sm" data-del-debt="${d.id}">Excluir</button>
@@ -666,6 +691,26 @@ function renderDebtsView() {
       `;
     })
     .join('');
+
+  document.querySelectorAll('[data-toggle-debt-month]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const id = btn.getAttribute('data-toggle-debt-month');
+      const debt = state.debts.find((d) => d.id === id);
+      if (!debt) return;
+      debt.paidMonths = Array.isArray(debt.paidMonths) ? debt.paidMonths : [];
+      if (debt.paidMonths.includes(selectedMonth)) {
+        debt.paidMonths = debt.paidMonths.filter((m) => m !== selectedMonth);
+        debt.paidAmount = Math.max(0, Number(debt.paidAmount || 0) - Number(debt.monthlyInstallment || 0));
+      } else {
+        debt.paidMonths.push(selectedMonth);
+        debt.paidAmount = Math.min(Number(debt.totalAmount), Number(debt.paidAmount || 0) + Number(debt.monthlyInstallment || 0));
+        if (debt.paidAmount >= debt.totalAmount) {
+          debt.status = 'Quitada';
+        }
+      }
+      persistAndRender();
+    });
+  });
 
   document.querySelectorAll('[data-pay-debt]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -700,6 +745,142 @@ function switchTab(targetId) {
   });
 }
 
+// Render Cofrinho & Reservas
+function renderVaultView() {
+  const goalsContainer = document.getElementById('vault-goals-container');
+  const movementsTbody = document.getElementById('vault-movements-tbody');
+  const selectGoal = document.getElementById('vault-move-goalId');
+
+  const goals = Array.isArray(state.vaultGoals) ? state.vaultGoals : [];
+  const movements = Array.isArray(state.vaultMovements) ? state.vaultMovements : [];
+
+  // Calcula saldos de cada meta somando saldo inicial + depósitos - resgates
+  const goalBalances = {};
+  goals.forEach((g) => {
+    goalBalances[g.id] = Number(g.initialBalance || 0);
+  });
+
+  let totalDeposited = 0;
+  let totalWithdrawn = 0;
+
+  movements.forEach((m) => {
+    const val = Number(m.amount || 0);
+    if (m.type === 'deposit') {
+      goalBalances[m.goalId] = (goalBalances[m.goalId] || 0) + val;
+      totalDeposited += val;
+    } else if (m.type === 'withdraw') {
+      goalBalances[m.goalId] = Math.max(0, (goalBalances[m.goalId] || 0) - val);
+      totalWithdrawn += val;
+    }
+  });
+
+  const totalSaved = Object.values(goalBalances).reduce((acc, b) => acc + b, 0);
+
+  // KPIs do Cofrinho
+  document.getElementById('vault-total-saved').textContent = formatBRL(totalSaved);
+  document.getElementById('vault-total-in').textContent = formatBRL(totalDeposited);
+  document.getElementById('vault-total-out').textContent = formatBRL(totalWithdrawn);
+  document.getElementById('vault-active-goals').textContent = String(goals.length);
+  document.getElementById('nav-badge-vault').textContent = formatBRL(totalSaved);
+
+  // Preenche select do formulário de movimentação
+  if (goals.length === 0) {
+    selectGoal.innerHTML = `<option value="">Crie um cofrinho primeiro</option>`;
+  } else {
+    selectGoal.innerHTML = goals
+      .map((g) => `<option value="${g.id}">${g.name} (Atual: ${formatBRL(goalBalances[g.id] || 0)})</option>`)
+      .join('');
+  }
+
+  // Cards das Caixinhas do Cofrinho
+  if (goals.length === 0) {
+    goalsContainer.innerHTML = `<div class="panel empty-state">Nenhum cofrinho ou reserva criada ainda. Crie sua primeira caixinha (ex: Reserva de Emergência) acima.</div>`;
+  } else {
+    goalsContainer.innerHTML = goals
+      .map((g) => {
+        const bal = goalBalances[g.id] || 0;
+        const target = Number(g.targetAmount || 0);
+        const hasTarget = target > 0;
+        const pct = hasTarget ? Math.min(100, Math.round((bal / target) * 100)) : 100;
+
+        return `
+          <div class="credit-card-item">
+            <div class="credit-card-visual" style="background: linear-gradient(135deg, #065f46, #0f172a); min-height: 120px">
+              <div class="card-visual-top">
+                <span class="card-brand-name">&#128176; ${g.name}</span>
+                <span class="card-status-pill">${hasTarget ? `${pct}% da meta` : 'Sem teto'}</span>
+              </div>
+              <div style="margin-top: 14px">
+                <span style="font-size: 0.74rem; opacity: 0.8">Saldo Guardado</span>
+                <strong style="font-family: var(--font-mono); font-size: 1.35rem; display: block">${formatBRL(bal)}</strong>
+              </div>
+            </div>
+            <div class="credit-card-body">
+              ${
+                hasTarget
+                  ? `
+                  <div class="limit-labels">
+                    <span>Meta: ${formatBRL(target)}</span>
+                    <strong>Falta: ${formatBRL(Math.max(0, target - bal))}</strong>
+                  </div>
+                  <div class="progress-track" style="margin-bottom: 8px">
+                    <div class="progress-fill" style="width: ${pct}%; background-color: var(--emerald)"></div>
+                  </div>
+                  `
+                  : ''
+              }
+              <div class="card-actions">
+                <button class="btn btn-danger btn-sm" data-del-vault-goal="${g.id}">Excluir Cofrinho</button>
+              </div>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    document.querySelectorAll('[data-del-vault-goal]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-del-vault-goal');
+        state.vaultGoals = state.vaultGoals.filter((g) => g.id !== id);
+        state.vaultMovements = state.vaultMovements.filter((m) => m.goalId !== id);
+        persistAndRender();
+      });
+    });
+  }
+
+  // Tabela de Histórico do Cofrinho
+  if (movements.length === 0) {
+    movementsTbody.innerHTML = `<tr><td colspan="6" class="empty-state">Nenhuma movimentação manual no cofrinho até o momento.</td></tr>`;
+  } else {
+    movementsTbody.innerHTML = movements
+      .slice()
+      .reverse()
+      .map((m) => {
+        const g = goals.find((x) => x.id === m.goalId);
+        const isDep = m.type === 'deposit';
+        return `
+          <tr>
+            <td><strong>${m.description}</strong></td>
+            <td><span class="tag">${g ? g.name : 'Cofrinho'}</span></td>
+            <td><span class="tag ${isDep ? 'income' : 'debt'}">${isDep ? 'Depósito (+)' : 'Resgate (-)'}</span></td>
+            <td style="font-family: var(--font-mono); font-size: 0.82rem">${m.date ? m.date.split('-').reverse().join('/') : '-'}</td>
+            <td class="${isDep ? 'amount-positive' : 'amount-negative'}">${isDep ? '+' : '-'} ${formatBRL(m.amount)}</td>
+            <td><button class="btn btn-danger btn-sm" data-del-vmove="${m.id}">Remover</button></td>
+          </tr>
+        `;
+      })
+      .join('');
+
+    document.querySelectorAll('[data-del-vmove]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const id = btn.getAttribute('data-del-vmove');
+        state.vaultMovements = state.vaultMovements.filter((m) => m.id !== id);
+        persistAndRender();
+      });
+    });
+  }
+}
+
 // Render Everything
 function renderAll() {
   document.getElementById('current-month-label').textContent = formatMonthLabel(selectedMonth);
@@ -714,6 +895,7 @@ function renderAll() {
   renderCardsView(summary);
   renderPixAndIncomesView(summary);
   renderDebtsView();
+  renderVaultView();
   updateFirebaseStatusBadge();
 }
 
@@ -735,6 +917,10 @@ function initApp() {
   document.querySelectorAll('input[type="date"]').forEach((inp) => {
     if (!inp.value) inp.value = todayISO();
   });
+  const debtMonthInput = document.getElementById('debt-start-month');
+  if (debtMonthInput && !debtMonthInput.value) {
+    debtMonthInput.value = selectedMonth;
+  }
 
   // Inicializa o serviço de autenticação
   authService.init();
@@ -937,7 +1123,9 @@ function initApp() {
     const totalAmount = parseFloat(document.getElementById('debt-total').value);
     const paidAmount = parseFloat(document.getElementById('debt-paid').value) || 0;
     const monthlyInstallment = parseFloat(document.getElementById('debt-installment').value) || 0;
-    const dueDate = document.getElementById('debt-due').value || todayISO();
+    const totalMonths = parseInt(document.getElementById('debt-total-months').value, 10) || 1;
+    const startMonth = document.getElementById('debt-start-month').value || selectedMonth;
+    const dueDay = parseInt(document.getElementById('debt-due-day').value, 10) || 10;
 
     if (!creditor || isNaN(totalAmount)) return;
     state.debts.push({
@@ -946,17 +1134,65 @@ function initApp() {
       totalAmount,
       paidAmount,
       monthlyInstallment,
-      dueDate,
+      totalMonths,
+      startMonth,
+      dueDay,
+      paidMonths: [],
       status: paidAmount >= totalAmount ? 'Quitada' : 'Ativa',
       includeInCycle: true
+    });
+    e.target.reset();
+    document.getElementById('debt-start-month').value = selectedMonth;
+    persistAndRender();
+  });
+
+  // Form: Add Vault Goal (Cofrinho)
+  document.getElementById('form-add-vault-goal').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = document.getElementById('vault-goal-name').value.trim();
+    const targetAmount = parseFloat(document.getElementById('vault-target-amount').value) || 0;
+    const initialBalance = parseFloat(document.getElementById('vault-initial-balance').value) || 0;
+
+    if (!name) return;
+    state.vaultGoals = Array.isArray(state.vaultGoals) ? state.vaultGoals : [];
+    state.vaultGoals.push({
+      id: `vg-${Date.now()}`,
+      name,
+      targetAmount,
+      initialBalance,
+      createdAt: new Date().toISOString()
     });
     e.target.reset();
     persistAndRender();
   });
 
+  // Form: Vault Movement (Depósito / Resgate manual)
+  document.getElementById('form-vault-movement').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const goalId = document.getElementById('vault-move-goalId').value;
+    const type = document.getElementById('vault-move-type').value;
+    const amount = parseFloat(document.getElementById('vault-move-amount').value);
+    const description = document.getElementById('vault-move-desc').value.trim();
+    const date = document.getElementById('vault-move-date').value || todayISO();
+
+    if (!goalId || isNaN(amount) || !description) return;
+    state.vaultMovements = Array.isArray(state.vaultMovements) ? state.vaultMovements : [];
+    state.vaultMovements.push({
+      id: `vm-${Date.now()}`,
+      goalId,
+      type,
+      amount,
+      description,
+      date
+    });
+    e.target.reset();
+    document.getElementById('vault-move-date').value = todayISO();
+    persistAndRender();
+  });
+
   // Clear Sample Data Button
   document.getElementById('clear-sample-btn').addEventListener('click', () => {
-    state = { incomes: [], cards: [], cardExpenses: [], pixExpenses: [], debts: [] };
+    state = { incomes: [], cards: [], cardExpenses: [], pixExpenses: [], debts: [], vaultGoals: [], vaultMovements: [] };
     persistAndRender();
   });
 

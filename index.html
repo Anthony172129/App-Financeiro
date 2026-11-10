@@ -72,6 +72,17 @@
               <span id="nav-badge-debts" class="nav-badge">0</span>
             </button>
           </li>
+          <li>
+            <button id="nav-vault-btn" class="nav-btn" data-target="vault-view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M19 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
+                <circle cx="12" cy="12" r="3" />
+                <line x1="12" y1="9" x2="12" y2="15" />
+              </svg>
+              <span>Cofrinho &amp; Reservas</span>
+              <span id="nav-badge-vault" class="nav-badge">R$ 0</span>
+            </button>
+          </li>
         </ul>
       </div>
 
@@ -500,17 +511,27 @@
                 </div>
                 <div class="form-group">
                   <label for="debt-paid">Valor Já Pago (R$)</label>
-                  <input id="debt-paid" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 500.00" value="0" />
+                  <input id="debt-paid" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 0.00" value="0" />
                 </div>
               </div>
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
                 <div class="form-group">
                   <label for="debt-installment">Parcela Mensal (R$)</label>
-                  <input id="debt-installment" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 250.00" required />
+                  <input id="debt-installment" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 300.00" required />
                 </div>
                 <div class="form-group">
-                  <label for="debt-due">Próximo Vencimento</label>
-                  <input id="debt-due" class="form-control" type="date" required />
+                  <label for="debt-total-months">Total de Meses / Parcelas</label>
+                  <input id="debt-total-months" class="form-control" type="number" min="1" max="360" placeholder="Ex: 10" value="10" required />
+                </div>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                <div class="form-group">
+                  <label for="debt-start-month">Mês de Início</label>
+                  <input id="debt-start-month" class="form-control" type="month" required />
+                </div>
+                <div class="form-group">
+                  <label for="debt-due-day">Dia de Vencimento</label>
+                  <input id="debt-due-day" class="form-control" type="number" min="1" max="31" placeholder="Ex: 10" value="10" required />
                 </div>
               </div>
               <button id="submit-debt-btn" type="submit" class="btn btn-primary">Registrar Dívida</button>
@@ -540,6 +561,138 @@
                 <tbody id="debts-tbody"></tbody>
               </table>
             </div>
+          </div>
+        </div>
+      <!-- 5. ÁREA DE COFRINHO & RESERVAS FINANCEIRAS -->
+      <section id="vault-view" class="view-section">
+        <!-- KPI Strip do Cofrinho -->
+        <div class="kpi-grid" style="margin-bottom: 24px">
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Total Guardado no Cofrinho</span>
+              <div class="kpi-icon income">&#128176;</div>
+            </div>
+            <div id="vault-total-saved" class="kpi-value" style="color: var(--emerald)">R$ 0,00</div>
+            <div class="kpi-sub"><span>Patrimônio reservado</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Depósitos Realizados</span>
+              <div class="kpi-icon pix">&#8593;</div>
+            </div>
+            <div id="vault-total-in" class="kpi-value">R$ 0,00</div>
+            <div class="kpi-sub"><span>Total adicionado</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Resgates / Saques</span>
+              <div class="kpi-icon cards">&#8595;</div>
+            </div>
+            <div id="vault-total-out" class="kpi-value">R$ 0,00</div>
+            <div class="kpi-sub"><span>Total resgatado</span></div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-top">
+              <span>Metas / Caixinhas Ativas</span>
+              <div class="kpi-icon net">&#127919;</div>
+            </div>
+            <div id="vault-active-goals" class="kpi-value">0</div>
+            <div class="kpi-sub"><span>Reservas criadas</span></div>
+          </div>
+        </div>
+
+        <div class="split-grid" style="margin-bottom: 24px">
+          <!-- Form: Criar Nova Caixinha / Cofrinho -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h3>Criar Nova Reserva / Caixinha</h3>
+                <p>Ex: Reserva de Emergência, Viagem, Carro, Investimento...</p>
+              </div>
+            </div>
+            <form id="form-add-vault-goal" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="vault-goal-name">Nome do Cofrinho</label>
+                <input id="vault-goal-name" class="form-control" type="text" placeholder="Ex: Reserva de Emergência" required />
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                <div class="form-group">
+                  <label for="vault-target-amount">Meta Desejada (R$ - opcional)</label>
+                  <input id="vault-target-amount" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 10000.00" />
+                </div>
+                <div class="form-group">
+                  <label for="vault-initial-balance">Saldo Inicial Guardado (R$)</label>
+                  <input id="vault-initial-balance" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 500.00" value="0" />
+                </div>
+              </div>
+              <button id="submit-vault-goal-btn" type="submit" class="btn btn-primary">Salvar Cofrinho</button>
+            </form>
+          </div>
+
+          <!-- Form: Movimentar Cofrinho (Depositar ou Resgatar Manualmente) -->
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h3>Movimentar Cofrinho (Manual)</h3>
+                <p>Guarde mais dinheiro ou registre um resgate manual quando precisar.</p>
+              </div>
+            </div>
+            <form id="form-vault-movement" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="vault-move-goalId">Qual Cofrinho?</label>
+                <select id="vault-move-goalId" class="form-control" required></select>
+              </div>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px">
+                <div class="form-group">
+                  <label for="vault-move-type">Tipo de Operação</label>
+                  <select id="vault-move-type" class="form-control">
+                    <option value="deposit">Depositar / Guardar (+)</option>
+                    <option value="withdraw">Resgatar / Sacar (-)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="vault-move-amount">Valor (R$)</label>
+                  <input id="vault-move-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 100.00" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="vault-move-desc">Motivo / Descrição</label>
+                <input id="vault-move-desc" class="form-control" type="text" placeholder="Ex: Sobra do salário, Rendimento..." required />
+              </div>
+              <div class="form-group">
+                <label for="vault-move-date">Data</label>
+                <input id="vault-move-date" class="form-control" type="date" required />
+              </div>
+              <button id="submit-vault-move-btn" type="submit" class="btn btn-primary">Confirmar Movimentação</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Cards das Caixinhas do Cofrinho -->
+        <div id="vault-goals-container" class="cards-grid" style="margin-bottom: 24px"></div>
+
+        <!-- Histórico de Depósitos e Resgates -->
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <h3>Histórico de Entradas e Resgates do Cofrinho</h3>
+              <p>Registro manual de todas as economias guardadas.</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Cofrinho</th>
+                  <th>Operação</th>
+                  <th>Data</th>
+                  <th>Valor</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="vault-movements-tbody"></tbody>
+            </table>
           </div>
         </div>
       </section>
