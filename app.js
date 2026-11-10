@@ -1,4 +1,4 @@
-import { FinanceAuthAndStorageService, DEFAULT_FIREBASE_CONFIG } from './firebase-service.js?v=20261110f';
+import { FinanceAuthAndStorageService, DEFAULT_FIREBASE_CONFIG } from './firebase-service.js?v=20261110h';
 
 const currentMonthKey = () => {
   const now = new Date();
@@ -1755,7 +1755,8 @@ function initApp() {
 
     pendingAuthFlow = true;
     try {
-      const { user, profile } = await authService.registerUser({ name, age, phone, email, password }, state);
+      state = getInitialSeedData();
+      const { user, profile } = await authService.registerUser({ name, age, phone, email, password }, getInitialSeedData());
       activeUser = user;
       activeProfile = profile;
       feedback.textContent = '';

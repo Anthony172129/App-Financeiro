@@ -372,16 +372,30 @@ export class FinanceAuthAndStorageService {
     this.userProfile = profile;
     await this._saveAccountLookup(user.uid, email, phone, password);
 
-    // Salva dados financeiros iniciais do usuário no Firestore: user_finances/{userId}
-    if (initialFinances) {
-      try {
-        await this.setDoc(this.doc(this.db, 'user_finances', user.uid), {
-          ...initialFinances,
-          updatedAt: new Date().toISOString()
-        });
-      } catch (err) {
-        console.warn('Erro ao salvar dados financeiros no Firestore:', err);
-      }
+    // Salva dados financeiros iniciais ZERADOS do novo usuário no Firestore e LocalStorage: user_finances/{userId}
+    const cleanInitialData = {
+      ...(initialFinances || {}),
+      incomes: [],
+      cards: [],
+      cardExpenses: [],
+      pixExpenses: [],
+      debts: [],
+      vaultGoals: [],
+      vaultMovements: [],
+      recurringIncomes: [],
+      ownerUid: user.uid,
+      ownerEmail: email,
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}${user.uid}`, JSON.stringify(cleanInitialData));
+    } catch (_) {}
+
+    try {
+      await this.setDoc(this.doc(this.db, 'user_finances', user.uid), cleanInitialData);
+    } catch (err) {
+      console.warn('Erro ao salvar dados financeiros iniciais no Firestore:', err);
     }
 
     return { user, profile };
@@ -483,6 +497,73 @@ export class FinanceAuthAndStorageService {
     return this.userProfile;
   }
 
+  _extractAllItemIds(data) {
+    if (!data || typeof data !== 'object') return [];
+    const collections = [
+      data.incomes,
+      data.cards,
+      data.cardExpenses,
+      data.pixExpenses,
+      data.debts,
+      data.vaultGoals,
+      data.vaultMovements,
+      data.recurringIncomes
+    ];
+    const ids = [];
+    for (const arr of collections) {
+      if (Array.isArray(arr)) {
+        for (const item of arr) {
+          if (item && item.id) ids.push(String(item.id));
+        }
+      }
+    }
+    return ids;
+  }
+
+  // Detecta se uma conta recém-criada herdou acidentalmente os IDs de outra conta mais antiga no mesmo aparelho
+  _isClonedFromOlderAccount(uid, candidateData) {
+    if (!candidateData || typeof candidateData !== 'object') return false;
+    if (candidateData.ownerUid && candidateData.ownerUid !== uid) return true;
+    if (candidateData.ownerUid === uid) return false;
+
+    const myIds = this._extractAllItemIds(candidateData);
+    if (myIds.length === 0) return false;
+
+    try {
+      const myProfileRaw = localStorage.getItem(`${PROFILE_KEY_PREFIX}${uid}`);
+      const myProfile = myProfileRaw ? JSON.parse(myProfileRaw) : null;
+      const myCreatedAt = (myProfile && myProfile.createdAt) || '';
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!key || !key.startsWith(STORAGE_KEY_PREFIX)) continue;
+        const otherUid = key.slice(STORAGE_KEY_PREFIX.length);
+        if (!otherUid || otherUid === uid) continue;
+
+        const otherDataRaw = localStorage.getItem(key);
+        if (!otherDataRaw) continue;
+        const otherData = JSON.parse(otherDataRaw);
+        const otherIds = this._extractAllItemIds(otherData);
+        if (otherIds.length === 0) continue;
+
+        // Se compartilha exatamente o mesmo ID de lançamento com outra conta
+        const hasSharedId = myIds.some((id) => otherIds.includes(id));
+        if (hasSharedId) {
+          const otherProfileRaw = localStorage.getItem(`${PROFILE_KEY_PREFIX}${otherUid}`);
+          const otherProfile = otherProfileRaw ? JSON.parse(otherProfileRaw) : null;
+          const otherCreatedAt = (otherProfile && otherProfile.createdAt) || '';
+
+          // Se a outra conta é mais antiga (ou não tem data e a atual é mais recente), esta conta foi clonada por engano
+          if (!otherCreatedAt || (myCreatedAt && myCreatedAt > otherCreatedAt)) {
+            return true;
+          }
+        }
+      }
+    } catch (_) {}
+
+    return false;
+  }
+
   setupRealtimeDataListener(uid) {
     if (this.unsubscribeData) {
       this.unsubscribeData();
@@ -493,6 +574,9 @@ export class FinanceAuthAndStorageService {
     this.unsubscribeData = this.onSnapshot(financesRef, (snapshot) => {
       if (snapshot.exists()) {
         const remoteData = snapshot.data();
+        if (this._isClonedFromOlderAccount(uid, remoteData)) {
+          return;
+        }
         localStorage.setItem(`${STORAGE_KEY_PREFIX}${uid}`, JSON.stringify(remoteData));
         if (this.onRemoteDataCallback) {
           this.onRemoteDataCallback(remoteData);
@@ -506,22 +590,33 @@ export class FinanceAuthAndStorageService {
   loadUserData(uid, fallbackDefault) {
     try {
       const raw = localStorage.getItem(`${STORAGE_KEY_PREFIX}${uid}`);
-      if (raw) return { ...fallbackDefault, ...JSON.parse(raw) };
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (this._isClonedFromOlderAccount(uid, parsed)) {
+          const clean = { ...fallbackDefault, ownerUid: uid };
+          localStorage.setItem(`${STORAGE_KEY_PREFIX}${uid}`, JSON.stringify(clean));
+          this.saveUserData(uid, clean);
+          return clean;
+        }
+        return { ...fallbackDefault, ...parsed, ownerUid: uid };
+      }
     } catch (e) {}
-    return fallbackDefault;
+    return { ...fallbackDefault, ownerUid: uid };
   }
 
   async saveUserData(uid, state) {
+    const payload = {
+      ...state,
+      ownerUid: uid,
+      updatedAt: new Date().toISOString()
+    };
     try {
-      localStorage.setItem(`${STORAGE_KEY_PREFIX}${uid}`, JSON.stringify(state));
+      localStorage.setItem(`${STORAGE_KEY_PREFIX}${uid}`, JSON.stringify(payload));
     } catch (e) {}
 
     if (this.db && uid && this.setDoc) {
       try {
-        await this.setDoc(this.doc(this.db, 'user_finances', uid), {
-          ...state,
-          updatedAt: new Date().toISOString()
-        });
+        await this.setDoc(this.doc(this.db, 'user_finances', uid), payload);
       } catch (err) {
         console.warn('Erro ao sincronizar Firestore user_finances:', err);
       }
