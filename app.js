@@ -1,4 +1,4 @@
-import { FinanceAuthAndStorageService, DEFAULT_FIREBASE_CONFIG } from './firebase-service.js';
+import { FinanceAuthAndStorageService, DEFAULT_FIREBASE_CONFIG } from './firebase-service.js?v=20261110f';
 
 const currentMonthKey = () => {
   const now = new Date();
@@ -274,10 +274,16 @@ async function dispatchRealVerification(channel, destination, feedbackEl, mode =
       if (feedbackEl) {
         if (res.method === 'emailjs_code') {
           feedbackEl.textContent = `Código de 6 dígitos enviado diretamente para o Gmail (${targetEmail})! Verifique sua caixa de entrada ou Spam e cole no campo acima.`;
+        } else if (res.method === 'already_verified') {
+          feedbackEl.textContent = `Seu Gmail (${targetEmail}) já está verificado no Firebase! Toque em "Confirmar Verificação" abaixo para prosseguir.`;
         } else if (res.method === 'firebase_reset_link') {
-          feedbackEl.textContent = `E-mail oficial de redefinição enviado para ${targetEmail}! Abra seu Gmail (ou Spam) e clique no link enviado pelo Firebase para alterar sua senha.`;
+          feedbackEl.textContent = res.alreadySentRecently
+            ? `O e-mail de redefinição já foi enviado há poucos instantes para ${targetEmail}! Verifique sua Caixa de Entrada e a pasta Spam do Gmail.`
+            : `E-mail oficial de redefinição enviado para ${targetEmail}! Abra seu Gmail (ou Spam) e clique no link enviado pelo Firebase para alterar sua senha.`;
         } else {
-          feedbackEl.textContent = `E-mail oficial de verificação enviado para ${targetEmail}! Abra seu Gmail (ou Spam), clique no link de confirmação do Firebase e depois toque em "Confirmar Verificação".`;
+          feedbackEl.textContent = res.alreadySentRecently
+            ? `O e-mail de verificação já foi enviado há poucos instantes para ${targetEmail}! Abra seu Gmail (verifique também a pasta Spam), clique no link do Firebase e depois toque em "Confirmar Verificação".`
+            : `E-mail oficial de verificação enviado para ${targetEmail}! Abra seu Gmail (ou Spam), clique no link de confirmação do Firebase e depois toque em "Confirmar Verificação".`;
         }
         feedbackEl.style.color = 'var(--emerald)';
       }
@@ -1762,8 +1768,11 @@ function initApp() {
         const codeInput = document.getElementById('auth-2fa-code');
         const fb2fa = document.getElementById('auth-2fa-feedback');
         if (codeInput) codeInput.value = '';
+        if (fb2fa) {
+          fb2fa.textContent = 'Toque em "Enviar no Gmail", "Enviar no WhatsApp" ou "Enviar SMS" acima para receber sua verificação.';
+          fb2fa.style.color = 'var(--text-secondary)';
+        }
         showAuthStep('2fa');
-        await dispatchRealVerification('gmail', user.email || email, fb2fa, '2fa');
       }
     } catch (err) {
       pendingAuthFlow = false;
@@ -1795,8 +1804,11 @@ function initApp() {
       const codeInput = document.getElementById('auth-2fa-code');
       const fb2fa = document.getElementById('auth-2fa-feedback');
       if (codeInput) codeInput.value = '';
+      if (fb2fa) {
+        fb2fa.textContent = 'Conta criada! Toque em "Enviar no Gmail", "Enviar no WhatsApp" ou "Enviar SMS" acima para confirmar.';
+        fb2fa.style.color = 'var(--emerald)';
+      }
       showAuthStep('2fa');
-      await dispatchRealVerification('gmail', email, fb2fa, '2fa');
     } catch (err) {
       pendingAuthFlow = false;
       feedback.textContent = `Erro: ${err.message}`;

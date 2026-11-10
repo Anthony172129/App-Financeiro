@@ -165,12 +165,30 @@ export class FinanceAuthAndStorageService {
 
     // 2. Envio nativo 100% gratuito do próprio Firebase direto para o Gmail do usuário
     if (mode === 'forgot') {
-      await this.sendPasswordResetEmail(this.auth, targetEmail);
+      try {
+        await this.sendPasswordResetEmail(this.auth, targetEmail);
+      } catch (err) {
+        if (err && err.code === 'auth/too-many-requests') {
+          return { method: 'firebase_reset_link', destination: targetEmail, alreadySentRecently: true };
+        }
+        throw err;
+      }
       return { method: 'firebase_reset_link', destination: targetEmail };
     }
 
     if (this.auth.currentUser) {
-      await this.sendEmailVerification(this.auth.currentUser);
+      await this.auth.currentUser.reload();
+      if (this.auth.currentUser.emailVerified) {
+        return { method: 'already_verified', destination: targetEmail };
+      }
+      try {
+        await this.sendEmailVerification(this.auth.currentUser);
+      } catch (err) {
+        if (err && err.code === 'auth/too-many-requests') {
+          return { method: 'firebase_verify_link', destination: targetEmail, alreadySentRecently: true };
+        }
+        throw err;
+      }
       return { method: 'firebase_verify_link', destination: targetEmail };
     }
 
