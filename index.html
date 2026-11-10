@@ -245,107 +245,16 @@
 
       <!-- 2. ÁREA DE CARTÕES DE CRÉDITO, LIMITES E FATURAS -->
       <section id="cards-view" class="view-section">
-        <div id="cards-list-container" class="cards-grid"></div>
-
-        <div class="split-grid" style="margin-bottom: 24px">
-          <!-- Form: Cadastrar Novo Cartão -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Novo Cartão</h3>
-                <p>Registre limite total, dia de fechamento e dia de vencimento da fatura.</p>
-              </div>
-            </div>
-            <form id="form-add-card" class="form-grid" style="grid-template-columns: 1fr">
-              <div class="form-group">
-                <label for="card-name">Nome / Banco do Cartão</label>
-                <input id="card-name" class="form-control" type="text" placeholder="Ex: Nubank, Itaú, Inter, C6..." required />
-              </div>
-              <div class="form-group">
-                <label for="card-limit">Limite Total do Cartão (R$)</label>
-                <input id="card-limit" class="form-control" type="number" step="0.01" min="1" placeholder="Ex: 5000.00" required />
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="card-closing">Dia do Fechamento</label>
-                  <input id="card-closing" class="form-control" type="number" min="1" max="31" placeholder="Ex: 5" required />
-                </div>
-                <div class="form-group">
-                  <label for="card-due">Dia de Pagamento (Venc.)</label>
-                  <input id="card-due" class="form-control" type="number" min="1" max="31" placeholder="Ex: 12" required />
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="card-color">Cor de Identificação</label>
-                <select id="card-color" class="form-control">
-                  <option value="#0f766e">Verde Esmeralda Escuro</option>
-                  <option value="#c2410c">Laranja Terracota (Inter/Itaú)</option>
-                  <option value="#1e3a8a">Azul Profundo (Safra/BTG)</option>
-                  <option value="#334155">Grafite Carbono (Black/XP)</option>
-                  <option value="#be123c">Rubi Intenso (Santander/Bradesco)</option>
-                </select>
-              </div>
-              <button id="submit-card-btn" type="submit" class="btn btn-primary">Salvar Cartão</button>
-            </form>
-          </div>
-
-          <!-- Form: Lançar Compra no Cartão (Crédito ou Débito) -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Lançar Gasto no Cartão (Crédito ou Débito)</h3>
-                <p>Registre compras na fatura de crédito ou passadas na função débito do cartão.</p>
-              </div>
-            </div>
-            <form id="form-add-card-expense" class="form-grid">
-              <div class="form-group">
-                <label for="card-expense-cardId">Cartão Utilizado</label>
-                <select id="card-expense-cardId" class="form-control" required></select>
-              </div>
-              <div class="form-group">
-                <label for="card-expense-mode">Modalidade (Crédito ou Débito)</label>
-                <select id="card-expense-mode" class="form-control">
-                  <option value="credit">Crédito (Entra na Fatura)</option>
-                  <option value="debit">Débito (Desconta à vista)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="card-expense-desc">Descrição da Compra</label>
-                <input id="card-expense-desc" class="form-control" type="text" placeholder="Ex: Mercado, Farmácia, Uber..." required />
-              </div>
-              <div class="form-group">
-                <label for="card-expense-amount">Valor deste Mês (R$)</label>
-                <input id="card-expense-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 150.00" required />
-              </div>
-              <div class="form-group">
-                <label for="card-expense-category">Categoria</label>
-                <select id="card-expense-category" class="form-control">
-                  <option value="Alimentação">Alimentação &amp; Mercado</option>
-                  <option value="Transporte">Transporte &amp; Combustível</option>
-                  <option value="Moradia">Moradia &amp; Casa</option>
-                  <option value="Assinaturas">Assinaturas &amp; Serviços</option>
-                  <option value="Eletrônicos">Compras &amp; Eletrônicos</option>
-                  <option value="Saúde">Saúde &amp; Farmácia</option>
-                  <option value="Lazer">Lazer &amp; Restaurantes</option>
-                  <option value="Outros">Outros</option>
-                </select>
-              </div>
-              <div id="card-installments-group" class="form-group">
-                <label for="card-expense-installments">Parcela (ex: 1x ou 2/6)</label>
-                <input id="card-expense-installments" class="form-control" type="text" placeholder="1x" value="1x" />
-              </div>
-              <div class="form-group">
-                <label for="card-expense-date">Data da Compra</label>
-                <input id="card-expense-date" class="form-control" type="date" required />
-              </div>
-              <div class="form-group" style="grid-column: 1 / -1">
-                <button id="submit-card-expense-btn" type="submit" class="btn btn-primary" style="width: 100%">
-                  Registrar Gasto no Cartão
-                </button>
-              </div>
-            </form>
-          </div>
+        <div class="section-actions-bar">
+          <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-card">
+            + Novo Cartão
+          </button>
+          <button type="button" class="btn btn-secondary" data-open-drawer="drawer-add-card-expense">
+            + Lançar Gasto no Cartão
+          </button>
         </div>
+
+        <div id="cards-list-container" class="cards-grid"></div>
 
         <!-- Lista de lançamentos nos cartões -->
         <div class="panel">
@@ -376,106 +285,13 @@
 
       <!-- 3. ÁREA DE GASTOS NO PIX / DINHEIRO E ENTRADAS -->
       <section id="pix-view" class="view-section">
-        <div class="split-grid" style="margin-bottom: 24px">
-          <!-- Form: Registrar Gasto no Pix -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Registrar Gasto no Pix / Dinheiro (Cédulas)</h3>
-                <p>Registre seus gastos fora dos cartões (Pix, dinheiro em espécie/cédulas, transferências).</p>
-              </div>
-            </div>
-            <form id="form-add-pix" class="form-grid" style="grid-template-columns: 1fr">
-              <div class="form-group">
-                <label for="pix-desc">O que foi pago?</label>
-                <input id="pix-desc" class="form-control" type="text" placeholder="Ex: Aluguel, Conta de Luz, Padaria em Dinheiro..." required />
-              </div>
-              <div class="form-group">
-                <label for="pix-recipient">Destinatário / Meio (Pix ou Dinheiro)</label>
-                <input id="pix-recipient" class="form-control" type="text" placeholder="Ex: Pix Imobiliária, Dinheiro (Cédulas)..." />
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="pix-amount">Valor (R$)</label>
-                  <input id="pix-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" required />
-                </div>
-                <div class="form-group">
-                  <label for="pix-category">Categoria</label>
-                  <select id="pix-category" class="form-control">
-                    <option value="Moradia">Moradia / Aluguel</option>
-                    <option value="Contas Fixas">Contas Fixas (Luz, Água, Net)</option>
-                    <option value="Alimentação">Alimentação / Mercado</option>
-                    <option value="Transporte">Transporte / Uber / Combustível</option>
-                    <option value="Lazer">Lazer / Saídas</option>
-                    <option value="Saúde">Saúde</option>
-                    <option value="Outros">Outros</option>
-                  </select>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="pix-date">Data do Pagamento</label>
-                <input id="pix-date" class="form-control" type="date" required />
-              </div>
-              <button id="submit-pix-btn" type="submit" class="btn btn-primary">Salvar Gasto (Pix / Dinheiro)</button>
-            </form>
-          </div>
-
-          <!-- Form: Registrar Entrada / Lucro (Define o tamanho máximo do gráfico!) -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Registrar Entrada de Dinheiro (Lucro / Receita)</h3>
-                <p>As entradas somam o valor máximo (100%) do gráfico de pizza na tela inicial.</p>
-              </div>
-            </div>
-            <form id="form-add-income" class="form-grid" style="grid-template-columns: 1fr">
-              <div class="form-group">
-                <label for="income-desc">Descrição da Entrada</label>
-                <input id="income-desc" class="form-control" type="text" placeholder="Ex: Salário, Pix Cliente, Venda, Rendimento..." required />
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="income-amount">Valor Recebido (R$)</label>
-                  <input id="income-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" required />
-                </div>
-                <div class="form-group">
-                  <label for="income-category">Tipo de Entrada</label>
-                  <select id="income-category" class="form-control">
-                    <option value="Salário">Salário Fixo</option>
-                    <option value="Renda Extra">Freelance / Renda Extra</option>
-                    <option value="Vendas">Vendas / Comissões</option>
-                    <option value="Rendimentos">Rendimentos / Dividendos</option>
-                    <option value="Outros">Outros Recebimentos</option>
-                  </select>
-                </div>
-              </div>
-              <div id="income-single-date-group" class="form-group" style="display: none">
-                <label for="income-date">Data do Recebimento</label>
-                <input id="income-date" class="form-control" type="date" />
-              </div>
-              <div id="income-recurring-group" class="recurring-box">
-                <span class="recurring-title">&#128260; Salário recorrente — registra sozinho todo mês</span>
-                <div class="form-row-2">
-                  <div class="form-group">
-                    <label for="income-rule-type">Regra de Pagamento</label>
-                    <select id="income-rule-type" class="form-control">
-                      <option value="businessDay">Nº dia útil do mês</option>
-                      <option value="fixedDay">Dia fixo do mês</option>
-                    </select>
-                  </div>
-                  <div class="form-group">
-                    <label id="income-rule-day-label" for="income-rule-day">Qual dia útil? (ex: 5)</label>
-                    <input id="income-rule-day" class="form-control" type="number" min="1" max="31" value="5" />
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="income-start-month">Começa a contar a partir de</label>
-                  <input id="income-start-month" class="form-control" type="month" />
-                </div>
-              </div>
-              <button id="submit-income-btn" type="submit" class="btn btn-primary">Adicionar Entrada ao Ciclo</button>
-            </form>
-          </div>
+        <div class="section-actions-bar">
+          <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-pix">
+            + Registrar Gasto
+          </button>
+          <button type="button" class="btn btn-secondary" data-open-drawer="drawer-add-income">
+            + Registrar Entrada
+          </button>
         </div>
 
         <!-- Tabelas de Gastos no Pix e Entradas -->
@@ -531,76 +347,34 @@
 
       <!-- 4. ÁREA DE CONTROLE DE DÍVIDAS -->
       <section id="debts-view" class="view-section">
-        <div class="split-grid">
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Registrar Dívida ou Acordo</h3>
-                <p>Acompanhe o saldo devedor total, quanto já foi abatido e o impacto da parcela no mês.</p>
-              </div>
-            </div>
-            <form id="form-add-debt" class="form-grid" style="grid-template-columns: 1fr">
-              <div class="form-group">
-                <label for="debt-creditor">Credor / Nome da Dívida</label>
-                <input id="debt-creditor" class="form-control" type="text" placeholder="Ex: Empréstimo, Financiamento, Acordo..." required />
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="debt-total">Valor Total da Dívida (R$)</label>
-                  <input id="debt-total" class="form-control" type="number" step="0.01" min="1" placeholder="Ex: 3000.00" required />
-                </div>
-                <div class="form-group">
-                  <label for="debt-paid">Valor Já Pago (R$)</label>
-                  <input id="debt-paid" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 0.00" value="0" />
-                </div>
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="debt-installment">Parcela Mensal (R$)</label>
-                  <input id="debt-installment" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 300.00" required />
-                </div>
-                <div class="form-group">
-                  <label for="debt-total-months">Total de Meses / Parcelas</label>
-                  <input id="debt-total-months" class="form-control" type="number" min="1" max="360" placeholder="Ex: 10" value="10" required />
-                </div>
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="debt-start-month">Mês de Início</label>
-                  <input id="debt-start-month" class="form-control" type="month" required />
-                </div>
-                <div class="form-group">
-                  <label for="debt-due-day">Dia de Vencimento</label>
-                  <input id="debt-due-day" class="form-control" type="number" min="1" max="31" placeholder="Ex: 10" value="10" required />
-                </div>
-              </div>
-              <button id="submit-debt-btn" type="submit" class="btn btn-primary">Registrar Dívida</button>
-            </form>
-          </div>
+        <div class="section-actions-bar">
+          <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-debt">
+            + Registrar Dívida ou Acordo
+          </button>
+        </div>
 
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Minhas Dívidas &amp; Pendências</h3>
-                <p>Confirme manualmente o pagamento do mês ou abata parcelas do saldo total.</p>
-              </div>
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <h3>Minhas Dívidas &amp; Pendências</h3>
+              <p>Confirme manualmente o pagamento do mês ou abata parcelas do saldo total.</p>
             </div>
-            <div class="table-wrap">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>Credor / Dívida</th>
-                    <th>Total</th>
-                    <th>Pago</th>
-                    <th>Falta Quitar</th>
-                    <th>Parcela no Ciclo</th>
-                    <th>Status</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody id="debts-tbody"></tbody>
-              </table>
-            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Credor / Dívida</th>
+                  <th>Total</th>
+                  <th>Pago</th>
+                  <th>Falta Quitar</th>
+                  <th>Parcela no Ciclo</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+              <tbody id="debts-tbody"></tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -608,7 +382,7 @@
       <!-- 5. ÁREA DE COFRINHO & RESERVAS FINANCEIRAS -->
       <section id="vault-view" class="view-section">
         <!-- KPI Strip do Cofrinho -->
-        <div class="kpi-grid" style="margin-bottom: 24px">
+        <div class="kpi-grid" style="margin-bottom: 20px">
           <div class="kpi-card">
             <div class="kpi-top">
               <span>Total Guardado nas Caixinhas</span>
@@ -643,87 +417,13 @@
           </div>
         </div>
 
-        <div class="split-grid" style="margin-bottom: 24px">
-          <!-- Form: Criar Caixinha -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Criar Caixinha (Cofrinho)</h3>
-                <p>Defina nome, descrição, valor mínimo mensal e o dia limite para alerta caso não deposite.</p>
-              </div>
-            </div>
-            <form id="form-add-vault-goal" class="form-grid" style="grid-template-columns: 1fr">
-              <div class="form-group">
-                <label for="vault-goal-name">Nome da Caixinha</label>
-                <input id="vault-goal-name" class="form-control" type="text" placeholder="Ex: Reserva de Emergência, Viagem..." required />
-              </div>
-              <div class="form-group">
-                <label for="vault-goal-desc">Descrição / Objetivo</label>
-                <input id="vault-goal-desc" class="form-control" type="text" placeholder="Ex: Guardar todo mês para imprevistos..." required />
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="vault-min-monthly">Valor Mínimo por Mês (R$)</label>
-                  <input id="vault-min-monthly" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 200.00" required />
-                </div>
-                <div class="form-group">
-                  <label for="vault-due-day">Dia Limite Mensal (Alerta !)</label>
-                  <input id="vault-due-day" class="form-control" type="number" min="1" max="31" placeholder="Ex: 10" value="10" required />
-                </div>
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="vault-target-amount">Meta Total (R$ - opcional)</label>
-                  <input id="vault-target-amount" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 10000.00" />
-                </div>
-                <div class="form-group">
-                  <label for="vault-initial-balance">Saldo Inicial Já Guardado (R$)</label>
-                  <input id="vault-initial-balance" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" value="0" />
-                </div>
-              </div>
-              <button id="submit-vault-goal-btn" type="submit" class="btn btn-primary">+ Criar Caixinha</button>
-            </form>
-          </div>
-
-          <!-- Form: Registrar Depósito Mensal ou Resgate na Caixinha -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Registrar Depósito do Mês / Resgate</h3>
-                <p>O valor guardado só é descontado do valor bruto após sua confirmação abaixo.</p>
-              </div>
-            </div>
-            <form id="form-vault-movement" class="form-grid" style="grid-template-columns: 1fr">
-              <div class="form-group">
-                <label for="vault-move-goalId">Selecionar Caixinha</label>
-                <select id="vault-move-goalId" class="form-control" required></select>
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="vault-move-type">Operação</label>
-                  <select id="vault-move-type" class="form-control">
-                    <option value="deposit">Guardar no Mês (Desconta do Bruto)</option>
-                    <option value="withdraw">Resgatar / Sacar da Caixinha</option>
-                  </select>
-                </div>
-                <div class="form-group">
-                  <label for="vault-move-amount">Quanto colocou / resgatou (R$)</label>
-                  <input id="vault-move-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 200.00" required />
-                </div>
-              </div>
-              <div class="form-row-2">
-                <div class="form-group">
-                  <label for="vault-move-desc">Observação</label>
-                  <input id="vault-move-desc" class="form-control" type="text" placeholder="Ex: Depósito de Novembro" required />
-                </div>
-                <div class="form-group">
-                  <label for="vault-move-date">Data</label>
-                  <input id="vault-move-date" class="form-control" type="date" required />
-                </div>
-              </div>
-              <button id="submit-vault-move-btn" type="submit" class="btn btn-primary">Confirmar e Registrar na Caixinha</button>
-            </form>
-          </div>
+        <div class="section-actions-bar">
+          <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-vault-goal">
+            + Criar Caixinha
+          </button>
+          <button type="button" class="btn btn-secondary" data-open-drawer="drawer-vault-movement">
+            + Registrar Depósito
+          </button>
         </div>
 
         <!-- Tabela de Caixinhas e Controle Mensal -->
@@ -777,6 +477,346 @@
           </div>
         </div>
       </section>
+
+      <!-- OVERLAY DE FORMULÁRIOS DESLIZANTES (ABRE DA ESQUERDA E FECHA PARA A ESQUERDA) -->
+      <div id="form-drawer-backdrop" class="form-drawer-backdrop" aria-hidden="true">
+        <div id="form-drawer-sheet" class="form-drawer-sheet" role="dialog" aria-modal="true">
+          <!-- 1. Drawer: Novo Cartão -->
+          <div id="drawer-add-card" class="form-drawer-content">
+            <div class="drawer-header">
+              <div class="panel-title">
+                <h3>Novo Cartão</h3>
+                <p>Registre limite total, dia de fechamento e dia de vencimento da fatura.</p>
+              </div>
+              <button type="button" class="drawer-close-btn" data-close-drawer aria-label="Fechar">&#10005;</button>
+            </div>
+            <form id="form-add-card" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="card-name">Nome / Banco do Cartão</label>
+                <input id="card-name" class="form-control" type="text" placeholder="Ex: Nubank, Itaú, Inter, C6..." required />
+              </div>
+              <div class="form-group">
+                <label for="card-limit">Limite Total do Cartão (R$)</label>
+                <input id="card-limit" class="form-control" type="number" step="0.01" min="1" placeholder="Ex: 5000.00" required />
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="card-closing">Dia do Fechamento</label>
+                  <input id="card-closing" class="form-control" type="number" min="1" max="31" placeholder="Ex: 5" required />
+                </div>
+                <div class="form-group">
+                  <label for="card-due">Dia de Pagamento (Venc.)</label>
+                  <input id="card-due" class="form-control" type="number" min="1" max="31" placeholder="Ex: 12" required />
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="card-color">Cor de Identificação</label>
+                <select id="card-color" class="form-control">
+                  <option value="#0f766e">Verde Esmeralda Escuro</option>
+                  <option value="#c2410c">Laranja Terracota (Inter/Itaú)</option>
+                  <option value="#1e3a8a">Azul Profundo (Safra/BTG)</option>
+                  <option value="#334155">Grafite Carbono (Black/XP)</option>
+                  <option value="#be123c">Rubi Intenso (Santander/Bradesco)</option>
+                </select>
+              </div>
+              <button id="submit-card-btn" type="submit" class="btn btn-primary">Salvar Cartão</button>
+            </form>
+          </div>
+
+          <!-- 2. Drawer: Lançar Gasto no Cartão -->
+          <div id="drawer-add-card-expense" class="form-drawer-content">
+            <div class="drawer-header">
+              <div class="panel-title">
+                <h3>Lançar Gasto no Cartão</h3>
+                <p>Registre compras na fatura de crédito ou passadas na função débito do cartão.</p>
+              </div>
+              <button type="button" class="drawer-close-btn" data-close-drawer aria-label="Fechar">&#10005;</button>
+            </div>
+            <form id="form-add-card-expense" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="card-expense-cardId">Cartão Utilizado</label>
+                <select id="card-expense-cardId" class="form-control" required></select>
+              </div>
+              <div class="form-group">
+                <label for="card-expense-mode">Modalidade (Crédito ou Débito)</label>
+                <select id="card-expense-mode" class="form-control">
+                  <option value="credit">Crédito (Entra na Fatura)</option>
+                  <option value="debit">Débito (Desconta à vista)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="card-expense-desc">Descrição da Compra</label>
+                <input id="card-expense-desc" class="form-control" type="text" placeholder="Ex: Mercado, Farmácia, Uber..." required />
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="card-expense-amount">Valor deste Mês (R$)</label>
+                  <input id="card-expense-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 150.00" required />
+                </div>
+                <div class="form-group">
+                  <label for="card-expense-category">Categoria</label>
+                  <select id="card-expense-category" class="form-control">
+                    <option value="Alimentação">Alimentação &amp; Mercado</option>
+                    <option value="Transporte">Transporte &amp; Combustível</option>
+                    <option value="Moradia">Moradia &amp; Casa</option>
+                    <option value="Assinaturas">Assinaturas &amp; Serviços</option>
+                    <option value="Eletrônicos">Compras &amp; Eletrônicos</option>
+                    <option value="Saúde">Saúde &amp; Farmácia</option>
+                    <option value="Lazer">Lazer &amp; Restaurantes</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div id="card-installments-group" class="form-group">
+                  <label for="card-expense-installments">Parcela (ex: 1x ou 2/6)</label>
+                  <input id="card-expense-installments" class="form-control" type="text" placeholder="1x" value="1x" />
+                </div>
+                <div class="form-group">
+                  <label for="card-expense-date">Data da Compra</label>
+                  <input id="card-expense-date" class="form-control" type="date" required />
+                </div>
+              </div>
+              <button id="submit-card-expense-btn" type="submit" class="btn btn-primary" style="width: 100%">
+                Registrar Gasto no Cartão
+              </button>
+            </form>
+          </div>
+
+          <!-- 3. Drawer: Registrar Gasto (Pix / Dinheiro) -->
+          <div id="drawer-add-pix" class="form-drawer-content">
+            <div class="drawer-header">
+              <div class="panel-title">
+                <h3>Registrar Gasto (Pix / Dinheiro)</h3>
+                <p>Registre seus gastos fora dos cartões (Pix, dinheiro em espécie/cédulas, transferências).</p>
+              </div>
+              <button type="button" class="drawer-close-btn" data-close-drawer aria-label="Fechar">&#10005;</button>
+            </div>
+            <form id="form-add-pix" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="pix-desc">O que foi pago?</label>
+                <input id="pix-desc" class="form-control" type="text" placeholder="Ex: Aluguel, Conta de Luz, Padaria em Dinheiro..." required />
+              </div>
+              <div class="form-group">
+                <label for="pix-recipient">Destinatário / Meio (Pix ou Dinheiro)</label>
+                <input id="pix-recipient" class="form-control" type="text" placeholder="Ex: Pix Imobiliária, Dinheiro (Cédulas)..." />
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="pix-amount">Valor (R$)</label>
+                  <input id="pix-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" required />
+                </div>
+                <div class="form-group">
+                  <label for="pix-category">Categoria</label>
+                  <select id="pix-category" class="form-control">
+                    <option value="Moradia">Moradia / Aluguel</option>
+                    <option value="Contas Fixas">Contas Fixas (Luz, Água, Net)</option>
+                    <option value="Alimentação">Alimentação / Mercado</option>
+                    <option value="Transporte">Transporte / Uber / Combustível</option>
+                    <option value="Lazer">Lazer / Saídas</option>
+                    <option value="Saúde">Saúde</option>
+                    <option value="Outros">Outros</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="pix-date">Data do Pagamento</label>
+                <input id="pix-date" class="form-control" type="date" required />
+              </div>
+              <button id="submit-pix-btn" type="submit" class="btn btn-primary">Salvar Gasto (Pix / Dinheiro)</button>
+            </form>
+          </div>
+
+          <!-- 4. Drawer: Registrar Entrada -->
+          <div id="drawer-add-income" class="form-drawer-content">
+            <div class="drawer-header">
+              <div class="panel-title">
+                <h3>Registrar Entrada</h3>
+                <p>As entradas somam o valor máximo (100%) do gráfico de pizza na tela inicial.</p>
+              </div>
+              <button type="button" class="drawer-close-btn" data-close-drawer aria-label="Fechar">&#10005;</button>
+            </div>
+            <form id="form-add-income" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="income-desc">Descrição da Entrada</label>
+                <input id="income-desc" class="form-control" type="text" placeholder="Ex: Salário, Pix Cliente, Venda, Rendimento..." required />
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="income-amount">Valor Recebido (R$)</label>
+                  <input id="income-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" required />
+                </div>
+                <div class="form-group">
+                  <label for="income-category">Tipo de Entrada</label>
+                  <select id="income-category" class="form-control">
+                    <option value="Salário">Salário Fixo</option>
+                    <option value="Renda Extra">Freelance / Renda Extra</option>
+                    <option value="Vendas">Vendas / Comissões</option>
+                    <option value="Rendimentos">Rendimentos / Dividendos</option>
+                    <option value="Outros">Outros Recebimentos</option>
+                  </select>
+                </div>
+              </div>
+              <div id="income-single-date-group" class="form-group" style="display: none">
+                <label for="income-date">Data do Recebimento</label>
+                <input id="income-date" class="form-control" type="date" />
+              </div>
+              <div id="income-recurring-group" class="recurring-box">
+                <span class="recurring-title">&#128260; Salário recorrente — registra sozinho todo mês</span>
+                <div class="form-row-2">
+                  <div class="form-group">
+                    <label for="income-rule-type">Regra de Pagamento</label>
+                    <select id="income-rule-type" class="form-control">
+                      <option value="businessDay">Nº dia útil do mês</option>
+                      <option value="fixedDay">Dia fixo do mês</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label id="income-rule-day-label" for="income-rule-day">Qual dia útil? (ex: 5)</label>
+                    <input id="income-rule-day" class="form-control" type="number" min="1" max="31" value="5" />
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="income-start-month">Começa a contar a partir de</label>
+                  <input id="income-start-month" class="form-control" type="month" />
+                </div>
+              </div>
+              <button id="submit-income-btn" type="submit" class="btn btn-primary">Adicionar Entrada ao Ciclo</button>
+            </form>
+          </div>
+
+          <!-- 5. Drawer: Registrar Dívida ou Acordo -->
+          <div id="drawer-add-debt" class="form-drawer-content">
+            <div class="drawer-header">
+              <div class="panel-title">
+                <h3>Registrar Dívida ou Acordo</h3>
+                <p>Acompanhe o saldo devedor total, quanto já foi abatido e o impacto da parcela no mês.</p>
+              </div>
+              <button type="button" class="drawer-close-btn" data-close-drawer aria-label="Fechar">&#10005;</button>
+            </div>
+            <form id="form-add-debt" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="debt-creditor">Credor / Nome da Dívida</label>
+                <input id="debt-creditor" class="form-control" type="text" placeholder="Ex: Empréstimo, Financiamento, Acordo..." required />
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="debt-total">Valor Total da Dívida (R$)</label>
+                  <input id="debt-total" class="form-control" type="number" step="0.01" min="1" placeholder="Ex: 3000.00" required />
+                </div>
+                <div class="form-group">
+                  <label for="debt-paid">Valor Já Pago (R$)</label>
+                  <input id="debt-paid" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 0.00" value="0" />
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="debt-installment">Parcela Mensal (R$)</label>
+                  <input id="debt-installment" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 300.00" required />
+                </div>
+                <div class="form-group">
+                  <label for="debt-total-months">Total de Meses / Parcelas</label>
+                  <input id="debt-total-months" class="form-control" type="number" min="1" max="360" placeholder="Ex: 10" value="10" required />
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="debt-start-month">Mês de Início</label>
+                  <input id="debt-start-month" class="form-control" type="month" required />
+                </div>
+                <div class="form-group">
+                  <label for="debt-due-day">Dia de Vencimento</label>
+                  <input id="debt-due-day" class="form-control" type="number" min="1" max="31" placeholder="Ex: 10" value="10" required />
+                </div>
+              </div>
+              <button id="submit-debt-btn" type="submit" class="btn btn-primary">Registrar Dívida</button>
+            </form>
+          </div>
+
+          <!-- 6. Drawer: Criar Caixinha -->
+          <div id="drawer-add-vault-goal" class="form-drawer-content">
+            <div class="drawer-header">
+              <div class="panel-title">
+                <h3>Criar Caixinha</h3>
+                <p>Defina nome, descrição, valor mínimo mensal e o dia limite para alerta caso não deposite.</p>
+              </div>
+              <button type="button" class="drawer-close-btn" data-close-drawer aria-label="Fechar">&#10005;</button>
+            </div>
+            <form id="form-add-vault-goal" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="vault-goal-name">Nome da Caixinha</label>
+                <input id="vault-goal-name" class="form-control" type="text" placeholder="Ex: Reserva de Emergência, Viagem..." required />
+              </div>
+              <div class="form-group">
+                <label for="vault-goal-desc">Descrição / Objetivo</label>
+                <input id="vault-goal-desc" class="form-control" type="text" placeholder="Ex: Guardar todo mês para imprevistos..." required />
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="vault-min-monthly">Valor Mínimo por Mês (R$)</label>
+                  <input id="vault-min-monthly" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 200.00" required />
+                </div>
+                <div class="form-group">
+                  <label for="vault-due-day">Dia Limite Mensal (Alerta !)</label>
+                  <input id="vault-due-day" class="form-control" type="number" min="1" max="31" placeholder="Ex: 10" value="10" required />
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="vault-target-amount">Meta Total (R$ - opcional)</label>
+                  <input id="vault-target-amount" class="form-control" type="number" step="0.01" min="0" placeholder="Ex: 10000.00" />
+                </div>
+                <div class="form-group">
+                  <label for="vault-initial-balance">Saldo Inicial Já Guardado (R$)</label>
+                  <input id="vault-initial-balance" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" value="0" />
+                </div>
+              </div>
+              <button id="submit-vault-goal-btn" type="submit" class="btn btn-primary">+ Criar Caixinha</button>
+            </form>
+          </div>
+
+          <!-- 7. Drawer: Registrar Depósito -->
+          <div id="drawer-vault-movement" class="form-drawer-content">
+            <div class="drawer-header">
+              <div class="panel-title">
+                <h3>Registrar Depósito</h3>
+                <p>O valor guardado só é descontado do valor bruto após sua confirmação abaixo.</p>
+              </div>
+              <button type="button" class="drawer-close-btn" data-close-drawer aria-label="Fechar">&#10005;</button>
+            </div>
+            <form id="form-vault-movement" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="vault-move-goalId">Selecionar Caixinha</label>
+                <select id="vault-move-goalId" class="form-control" required></select>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="vault-move-type">Operação</label>
+                  <select id="vault-move-type" class="form-control">
+                    <option value="deposit">Guardar no Mês (Desconta do Bruto)</option>
+                    <option value="withdraw">Resgatar / Sacar da Caixinha</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="vault-move-amount">Quanto colocou / resgatou (R$)</label>
+                  <input id="vault-move-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="Ex: 200.00" required />
+                </div>
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="vault-move-desc">Observação</label>
+                  <input id="vault-move-desc" class="form-control" type="text" placeholder="Ex: Depósito de Novembro" required />
+                </div>
+                <div class="form-group">
+                  <label for="vault-move-date">Data</label>
+                  <input id="vault-move-date" class="form-control" type="date" required />
+                </div>
+              </div>
+              <button id="submit-vault-move-btn" type="submit" class="btn btn-primary">Confirmar e Registrar na Caixinha</button>
+            </form>
+          </div>
+        </div>
+      </div>
 
       <!-- 6. ÁREA DE CONFIGURAÇÕES (HUB + SUB-TELAS) -->
       <section id="settings-view" class="view-section">
@@ -1368,6 +1408,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261110h"></script>
+  <script type="module" src="./app.js?v=20261110i"></script>
 </body>
 </html>

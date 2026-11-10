@@ -1932,11 +1932,44 @@ function initApp() {
 
   if (openSettingsBtn) {
     openSettingsBtn.addEventListener('click', () => {
-      populateSettingsData();
-      openSettingsSubview('settings-hub');
-      switchTab('settings-view');
+      const settingsSec = document.getElementById('settings-view');
+      if (settingsSec && settingsSec.classList.contains('active')) {
+        switchTab(lastActiveTabBeforeSettings || 'overview-view');
+      } else {
+        populateSettingsData();
+        openSettingsSubview('settings-hub');
+        switchTab('settings-view');
+      }
     });
   }
+
+  // Controles de abertura e fechamento das gavetas deslizantes de formulário (abrem e fecham pela esquerda)
+  document.querySelectorAll('[data-open-drawer]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      openFormDrawer(btn.getAttribute('data-open-drawer'));
+    });
+  });
+
+  document.querySelectorAll('[data-close-drawer]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      closeFormDrawer();
+    });
+  });
+
+  const drawerBackdrop = document.getElementById('form-drawer-backdrop');
+  if (drawerBackdrop) {
+    drawerBackdrop.addEventListener('click', (e) => {
+      if (e.target === drawerBackdrop) {
+        closeFormDrawer();
+      }
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      closeFormDrawer();
+    }
+  });
 
   document.querySelectorAll('[data-open-settings-sub]').forEach((btn) => {
     btn.addEventListener('click', () => {
@@ -2112,6 +2145,7 @@ function initApp() {
     });
     e.target.reset();
     persistAndRender();
+    closeFormDrawer();
   });
 
   // Toggle installments field when card expense mode is Debit vs Credit
@@ -2154,6 +2188,7 @@ function initApp() {
     document.getElementById('card-expense-date').value = todayISO();
     if (cardModeEl && cardInstGroup) cardInstGroup.style.display = '';
     persistAndRender();
+    closeFormDrawer();
   });
 
   // Form: Add Pix / Dinheiro Expense
@@ -2178,6 +2213,7 @@ function initApp() {
     e.target.reset();
     document.getElementById('pix-date').value = todayISO();
     persistAndRender();
+    closeFormDrawer();
   });
 
   // Income form: toggle recurring (Salário Fixo) vs single-date fields
@@ -2248,6 +2284,7 @@ function initApp() {
     document.getElementById('income-date').value = todayISO();
     applyIncomeFormMode();
     persistAndRender();
+    closeFormDrawer();
   });
 
   // Form: Add Debt
@@ -2278,6 +2315,7 @@ function initApp() {
     e.target.reset();
     document.getElementById('debt-start-month').value = selectedMonth;
     persistAndRender();
+    closeFormDrawer();
   });
 
   // Form: Add Vault Goal (Criar Caixinha com nome, descrição, mínimo mensal e dia de alerta)
@@ -2306,6 +2344,7 @@ function initApp() {
     document.getElementById('vault-due-day').value = 10;
     document.getElementById('vault-initial-balance').value = 0;
     persistAndRender();
+    closeFormDrawer();
   });
 
   // Form: Vault Movement (Depósito confirmado que desconta do bruto no mês / Resgate manual)
@@ -2331,6 +2370,7 @@ function initApp() {
     e.target.reset();
     document.getElementById('vault-move-date').value = todayISO();
     persistAndRender();
+    closeFormDrawer();
   });
 
   renderAll();
