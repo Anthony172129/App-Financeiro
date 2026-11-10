@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css" />
+  <link rel="stylesheet" href="./styles.css?v=20261110c" />
 </head>
 <body>
   <div class="app-shell">
@@ -779,45 +779,213 @@
           </div>
         </div>
       </section>
+
+      <!-- 6. ÁREA DE CONFIGURAÇÕES (HUB + SUB-TELAS) -->
+      <section id="settings-view" class="view-section">
+        <!-- Hub Principal de Configurações -->
+        <div id="settings-hub" class="settings-subview active">
+          <div class="panel" style="margin-bottom: 24px">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h3>&#9881;&#65039; Central de Configurações</h3>
+                <p>Escolha abaixo qual categoria de configurações você deseja acessar ou personalizar.</p>
+              </div>
+            </div>
+
+            <div class="settings-hub-grid">
+              <!-- Card 1: Dados do Usuário -->
+              <div class="settings-option-card">
+                <div class="settings-option-icon">&#128100;</div>
+                <div class="settings-option-body">
+                  <h4>Dados do Usuário &amp; Conta</h4>
+                  <p>Edite seu nome de exibição, idade cadastrada ou redefina os lançamentos da sua conta.</p>
+                </div>
+                <button type="button" class="btn btn-primary" data-open-settings-sub="settings-profile-subview">
+                  Abrir Dados do Usuário &#8594;
+                </button>
+              </div>
+
+              <!-- Card 2: Tamanho das Fontes de Texto -->
+              <div class="settings-option-card">
+                <div class="settings-option-icon">&#128292;</div>
+                <div class="settings-option-body">
+                  <h4>Tamanho das Fontes de Texto</h4>
+                  <p>Ajuste com botões de arraste o tamanho de títulos, textos/labels, botões, campos e números/valores com prévia em tempo real.</p>
+                </div>
+                <button type="button" class="btn btn-primary" data-open-settings-sub="settings-fonts-subview">
+                  Ajustar Fontes &#8594;
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sub-view 1: Dados do Usuário -->
+        <div id="settings-profile-subview" class="settings-subview">
+          <div class="panel" style="max-width: 680px">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h3>&#128100; Dados do Usuário &amp; Conta</h3>
+                <p>Atualize seu nome e idade ou gerencie os dados financeiros salvos.</p>
+              </div>
+              <button type="button" class="btn btn-secondary btn-sm" data-back-settings-hub>
+                &#8592; Voltar às Configurações
+              </button>
+            </div>
+
+            <form id="form-user-settings" class="form-grid" style="grid-template-columns: 1fr">
+              <div class="form-group">
+                <label for="settings-name">Seu Nome de Exibição</label>
+                <input id="settings-name" class="form-control" type="text" placeholder="Seu nome" required />
+              </div>
+              <div class="form-row-2">
+                <div class="form-group">
+                  <label for="settings-age">Sua Idade</label>
+                  <input id="settings-age" class="form-control" type="number" min="1" max="120" placeholder="Ex: 18" />
+                </div>
+                <div class="form-group">
+                  <label for="settings-email">E-mail / Gmail (Login)</label>
+                  <input id="settings-email" class="form-control" type="email" disabled />
+                </div>
+              </div>
+
+              <p id="settings-feedback" style="font-size: 0.85rem; min-height: 20px"></p>
+
+              <div style="display: flex; gap: 10px; flex-wrap: wrap">
+                <button id="save-settings-btn" type="submit" class="btn btn-primary" style="flex: 1">
+                  Salvar Alterações
+                </button>
+                <button id="reset-all-data-btn" type="button" class="btn btn-danger" title="Apaga todos os lançamentos desta conta">
+                  Zerar Todos os Dados
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Sub-view 2: Tamanho das Fontes de Texto -->
+        <div id="settings-fonts-subview" class="settings-subview">
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">
+                <h3>&#128292; Tamanho das Fontes de Texto</h3>
+                <p>Arraste as barras abaixo entre o mínimo e o máximo para regular cada classe de fonte do aplicativo. Veja no texto "Aaaaa" como ficará.</p>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap">
+                <button id="reset-fonts-btn" type="button" class="btn btn-secondary btn-sm">
+                  Restaurar Padrão
+                </button>
+                <button type="button" class="btn btn-secondary btn-sm" data-back-settings-hub>
+                  &#8592; Voltar às Configurações
+                </button>
+              </div>
+            </div>
+
+            <div class="font-sliders-grid">
+              <!-- 1. Títulos e Cabeçalhos -->
+              <div class="font-slider-card">
+                <div class="font-slider-top">
+                  <div>
+                    <strong>1. Títulos e Cabeçalhos</strong>
+                    <span>Títulos de páginas, painéis e seções (h1, h2, h3)</span>
+                  </div>
+                  <span id="font-val-titles" class="nav-badge">20px</span>
+                </div>
+                <div class="font-slider-control">
+                  <span class="font-bound">Mín: 15px</span>
+                  <input id="font-slider-titles" class="font-range-input" type="range" min="15" max="30" step="1" value="20" />
+                  <span class="font-bound">Máx: 30px</span>
+                </div>
+                <div class="font-preview-box">
+                  <span class="font-preview-label">Pré-visualização:</span>
+                  <div id="font-preview-titles" class="font-preview-sample preview-titles">Aaaaa — Títulos e Painéis</div>
+                </div>
+              </div>
+
+              <!-- 2. Textos, Descrições, Labels e Tabelas -->
+              <div class="font-slider-card">
+                <div class="font-slider-top">
+                  <div>
+                    <strong>2. Textos, Labels e Tabelas</strong>
+                    <span>Textos gerais, descrições, rótulos e linhas de tabelas</span>
+                  </div>
+                  <span id="font-val-body" class="nav-badge">14px</span>
+                </div>
+                <div class="font-slider-control">
+                  <span class="font-bound">Mín: 11px</span>
+                  <input id="font-slider-body" class="font-range-input" type="range" min="11" max="22" step="1" value="14" />
+                  <span class="font-bound">Máx: 22px</span>
+                </div>
+                <div class="font-preview-box">
+                  <span class="font-preview-label">Pré-visualização:</span>
+                  <div id="font-preview-body" class="font-preview-sample preview-body">Aaaaa — Textos e Descrições</div>
+                </div>
+              </div>
+
+              <!-- 3. Botões e Abas de Navegação -->
+              <div class="font-slider-card">
+                <div class="font-slider-top">
+                  <div>
+                    <strong>3. Botões e Menu de Abas</strong>
+                    <span>Texto de todos os botões de ação e botões do menu</span>
+                  </div>
+                  <span id="font-val-buttons" class="nav-badge">14px</span>
+                </div>
+                <div class="font-slider-control">
+                  <span class="font-bound">Mín: 11px</span>
+                  <input id="font-slider-buttons" class="font-range-input" type="range" min="11" max="22" step="1" value="14" />
+                  <span class="font-bound">Máx: 22px</span>
+                </div>
+                <div class="font-preview-box">
+                  <span class="font-preview-label">Pré-visualização:</span>
+                  <div id="font-preview-buttons" class="font-preview-sample preview-buttons">Aaaaa — Botões e Ações</div>
+                </div>
+              </div>
+
+              <!-- 4. Caixas de Texto (Inputs e Selects) -->
+              <div class="font-slider-card">
+                <div class="font-slider-top">
+                  <div>
+                    <strong>4. Caixas de Texto e Formulários</strong>
+                    <span>Texto digitado dentro das textboxes e seletores</span>
+                  </div>
+                  <span id="font-val-inputs" class="nav-badge">15px</span>
+                </div>
+                <div class="font-slider-control">
+                  <span class="font-bound">Mín: 12px</span>
+                  <input id="font-slider-inputs" class="font-range-input" type="range" min="12" max="22" step="1" value="15" />
+                  <span class="font-bound">Máx: 22px</span>
+                </div>
+                <div class="font-preview-box">
+                  <span class="font-preview-label">Pré-visualização:</span>
+                  <div id="font-preview-inputs" class="font-preview-sample preview-inputs">Aaaaa — Campos de Digitação</div>
+                </div>
+              </div>
+
+              <!-- 5. Números e Valores em Reais (R$) -->
+              <div class="font-slider-card" style="grid-column: 1 / -1">
+                <div class="font-slider-top">
+                  <div>
+                    <strong>5. Números, Saldos e Valores Financeiros (R$)</strong>
+                    <span>Valores em destaque nos containers de KPI, faturas e saldos</span>
+                  </div>
+                  <span id="font-val-numbers" class="nav-badge">25px</span>
+                </div>
+                <div class="font-slider-control">
+                  <span class="font-bound">Mín: 18px</span>
+                  <input id="font-slider-numbers" class="font-range-input" type="range" min="18" max="36" step="1" value="25" />
+                  <span class="font-bound">Máx: 36px</span>
+                </div>
+                <div class="font-preview-box">
+                  <span class="font-preview-label">Pré-visualização:</span>
+                  <div id="font-preview-numbers" class="font-preview-sample preview-numbers">Aaaaa — R$ 1.598,40</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </main>
-  </div>
-
-  <!-- Modal de Configurações do Usuário -->
-  <div id="settings-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
-    <div class="modal-card">
-      <div class="modal-header">
-        <h3 id="settings-modal-title">&#9881;&#65039; Configurações da Conta</h3>
-        <button id="close-settings-modal-btn" class="close-btn" aria-label="Fechar">&times;</button>
-      </div>
-
-      <form id="form-user-settings" class="form-grid" style="grid-template-columns: 1fr">
-        <div class="form-group">
-          <label for="settings-name">Seu Nome de Exibição</label>
-          <input id="settings-name" class="form-control" type="text" placeholder="Seu nome" required />
-        </div>
-        <div class="form-row-2">
-          <div class="form-group">
-            <label for="settings-age">Sua Idade</label>
-            <input id="settings-age" class="form-control" type="number" min="1" max="120" placeholder="Ex: 18" />
-          </div>
-          <div class="form-group">
-            <label for="settings-email">E-mail / Gmail (Login)</label>
-            <input id="settings-email" class="form-control" type="email" disabled />
-          </div>
-        </div>
-
-        <p id="settings-feedback" style="font-size: 0.82rem; min-height: 20px"></p>
-
-        <div style="display: flex; gap: 10px; flex-wrap: wrap">
-          <button id="save-settings-btn" type="submit" class="btn btn-primary" style="flex: 1">
-            Salvar Alterações
-          </button>
-          <button id="reset-all-data-btn" type="button" class="btn btn-danger" title="Apaga todos os lançamentos desta conta">
-            Zerar Todos os Dados
-          </button>
-        </div>
-      </form>
-    </div>
   </div>
 
   <!-- Modal de Autenticação (Login e Registro por E-mail e Senha) -->
@@ -878,6 +1046,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261110b"></script>
+  <script type="module" src="./app.js?v=20261110c"></script>
 </body>
 </html>

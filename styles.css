@@ -29,6 +29,11 @@
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-mono: 'JetBrains Mono', monospace;
+  --fs-titles: 20px;
+  --fs-body: 14px;
+  --fs-buttons: 14px;
+  --fs-inputs: 15px;
+  --fs-numbers: 25px;
 
   /* Spacing & Radius */
   --radius-sm: 8px;
@@ -1826,5 +1831,271 @@ body {
     padding: 4px 10px;
   }
 }
+
+/* ===== CENTRAL DE CONFIGURAÇÕES (HUB + SUB-TELAS) & CONTROLE DE TAMANHO DE FONTES ===== */
+.settings-subview {
+  display: none;
+  animation: fadeIn 0.22s ease;
+}
+
+.settings-subview.active {
+  display: block;
+}
+
+.settings-hub-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.settings-option-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 16px;
+  transition: var(--transition);
+}
+
+.settings-option-card:hover {
+  border-color: rgba(16, 185, 129, 0.45);
+  transform: translateY(-2px);
+}
+
+.settings-option-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--emerald-soft);
+  color: var(--emerald);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.45rem;
+}
+
+.settings-option-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-option-body h4 {
+  font-size: var(--fs-titles, 20px);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.settings-option-body p {
+  font-size: var(--fs-body, 14px);
+  color: var(--text-secondary);
+  line-height: 1.45;
+}
+
+/* Grid de Sliders de Fonte */
+.font-sliders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 18px;
+}
+
+.font-slider-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.font-slider-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.font-slider-top strong {
+  display: block;
+  font-size: 0.98rem;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.font-slider-top span {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.font-slider-top .nav-badge {
+  font-size: 0.82rem;
+  padding: 4px 10px;
+  background-color: var(--emerald-soft);
+  color: var(--emerald);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.font-slider-control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.font-bound {
+  font-size: 0.74rem;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.font-range-input {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  outline: none;
+  cursor: pointer;
+}
+
+.font-range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--emerald);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+  transition: transform 0.15s ease;
+}
+
+.font-range-input::-webkit-slider-thumb:active {
+  cursor: grabbing;
+  transform: scale(1.12);
+}
+
+.font-range-input::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--emerald);
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  cursor: grab;
+}
+
+.font-preview-box {
+  background-color: var(--bg-input);
+  border: 1px dashed var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.font-preview-label {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.font-preview-sample {
+  color: var(--text-primary);
+  line-height: 1.35;
+  word-break: break-word;
+}
+
+.preview-titles {
+  font-size: var(--fs-titles, 20px);
+  font-weight: 800;
+}
+
+.preview-body {
+  font-size: var(--fs-body, 14px);
+  font-weight: 500;
+}
+
+.preview-buttons {
+  font-size: var(--fs-buttons, 14px);
+  font-weight: 700;
+  display: inline-block;
+  align-self: flex-start;
+  background-color: var(--emerald);
+  color: #06281e;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+}
+
+.preview-inputs {
+  font-size: var(--fs-inputs, 15px);
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.preview-numbers {
+  font-size: var(--fs-numbers, 25px);
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--emerald);
+}
+
+/* Aplicação dinâmica das variáveis de tamanho de fonte em todo o site */
+.page-header h2,
+.panel-title h3,
+.schedule-header-text h3,
+.card-brand-name,
+.schedule-card-title {
+  font-size: var(--fs-titles) !important;
+}
+
+body,
+.page-header p,
+.panel-title p,
+.schedule-header-text p,
+.kpi-top,
+.kpi-sub,
+.data-table,
+.data-table td,
+.data-table th,
+.form-group label,
+.legend-name,
+.legend-values,
+.cycle-stat-box .meta span {
+  font-size: var(--fs-body) !important;
+}
+
+.btn,
+.btn-sm,
+.nav-btn,
+.segmented-control button,
+.auth-tab-btn,
+.user-logout-btn {
+  font-size: var(--fs-buttons) !important;
+}
+
+.form-control {
+  font-size: var(--fs-inputs) !important;
+}
+
+.kpi-value,
+.pie-center-amount,
+.card-invoice-box .amount,
+.cycle-stat-box .meta strong {
+  font-size: var(--fs-numbers) !important;
+}
+
 
 

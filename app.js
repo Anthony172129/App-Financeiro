@@ -7,6 +7,51 @@ const currentMonthKey = () => {
 
 const todayISO = () => new Date().toISOString().split('T')[0];
 
+const DEFAULT_FONT_SETTINGS = {
+  titles: 20,
+  body: 14,
+  buttons: 14,
+  inputs: 15,
+  numbers: 25
+};
+
+const FONT_STORAGE_KEY = 'app_financeiro_font_settings';
+
+function loadCachedFontSettings() {
+  try {
+    const raw = localStorage.getItem(FONT_STORAGE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { ...DEFAULT_FONT_SETTINGS, ...parsed };
+    }
+  } catch (_) {}
+  return { ...DEFAULT_FONT_SETTINGS };
+}
+
+function applyFontSettings(fontCfg) {
+  const cfg = { ...DEFAULT_FONT_SETTINGS, ...(fontCfg || {}) };
+  const root = document.documentElement;
+  root.style.setProperty('--fs-titles', `${cfg.titles}px`);
+  root.style.setProperty('--fs-body', `${cfg.body}px`);
+  root.style.setProperty('--fs-buttons', `${cfg.buttons}px`);
+  root.style.setProperty('--fs-inputs', `${cfg.inputs}px`);
+  root.style.setProperty('--fs-numbers', `${cfg.numbers}px`);
+
+  try {
+    localStorage.setItem(FONT_STORAGE_KEY, JSON.stringify(cfg));
+  } catch (_) {}
+
+  const keys = ['titles', 'body', 'buttons', 'inputs', 'numbers'];
+  keys.forEach((key) => {
+    const slider = document.getElementById(`font-slider-${key}`);
+    const badge = document.getElementById(`font-val-${key}`);
+    const preview = document.getElementById(`font-preview-${key}`);
+    if (slider) slider.value = cfg[key];
+    if (badge) badge.textContent = `${cfg[key]}px`;
+    if (preview) preview.style.fontSize = `${cfg[key]}px`;
+  });
+}
+
 const getInitialSeedData = () => {
   return {
     incomes: [],
@@ -16,7 +61,8 @@ const getInitialSeedData = () => {
     debts: [],
     vaultGoals: [],
     vaultMovements: [],
-    recurringIncomes: []
+    recurringIncomes: [],
+    fontSettings: loadCachedFontSettings()
   };
 };
 
@@ -44,8 +90,10 @@ const authService = new FinanceAuthAndStorageService(
         debts: remoteData.debts || [],
         vaultGoals: remoteData.vaultGoals || [],
         vaultMovements: remoteData.vaultMovements || [],
-        recurringIncomes: remoteData.recurringIncomes || []
+        recurringIncomes: remoteData.recurringIncomes || [],
+        fontSettings: { ...DEFAULT_FONT_SETTINGS, ...(remoteData.fontSettings || loadCachedFontSettings()) }
       };
+      applyFontSettings(state.fontSettings);
       renderAll();
     }
   }
@@ -94,6 +142,8 @@ function handleAuthChange(user, profile) {
 
     // Carrega dados específicos desse usuário
     state = authService.loadUserData(user.uid, getInitialSeedData());
+    state.fontSettings = { ...DEFAULT_FONT_SETTINGS, ...(state.fontSettings || loadCachedFontSettings()) };
+    applyFontSettings(state.fontSettings);
     renderAll();
   } else {
     overlay.classList.remove('hidden');
@@ -1479,33 +1529,60 @@ function initApp() {
     await authService.logout();
   });
 
-  // Modal de Configurações (Editar Nome e Idade ou Zerar Dados)
-  const settingsModal = document.getElementById('settings-modal');
+  // View de Configurações (Hub de Opções + Sub-views: Dados do Usuário e Tamanho das Fontes)
   const openSettingsBtn = document.getElementById('open-settings-btn');
-  const closeSettingsBtn = document.getElementById('close-settings-modal-btn');
   const settingsForm = document.getElementById('form-user-settings');
   const settingsFeedback = document.getElementById('settings-feedback');
 
-  if (openSettingsBtn && settingsModal) {
-    openSettingsBtn.addEventListener('click', () => {
-      document.getElementById('settings-name').value =
-        (activeProfile && activeProfile.name) || (activeUser && activeUser.displayName) || '';
-      document.getElementById('settings-age').value =
-        activeProfile && activeProfile.age != null ? activeProfile.age : '';
-      document.getElementById('settings-email').value = (activeUser && activeUser.email) || '';
+  const openSettingsSubview = (subviewId) => {
+    document.querySelectorAll('#settings-view .settings-subview').forEach((sub) => {
+      sub.classList.toggle('active', sub.id === subviewId);
+    });
+  };
+
+  const populateSettingsData = () => {
+    const nameInput = document.getElementById('settings-name');
+    const ageInput = document.getElementById('settings-age');
+    const emailInput = document.getElementById('settings-email');
+    if (nameInput) {
+      nameInput.value = (activeProfile && activeProfile.name) || (activeUser && activeUser.displayName) || '';
+    }
+    if (ageInput) {
+      ageInput.value = activeProfile && activeProfile.age != null ? activeProfile.age : '';
+    }
+    if (emailInput) {
+      emailInput.value = (activeUser && activeUser.email) || '';
+    }
+    if (settingsFeedback) {
       settingsFeedback.textContent = '';
-      settingsModal.classList.add('open');
+    }
+    applyFontSettings(state.fontSettings);
+  };
+
+  // Aplica as fontes salvas logo na inicialização
+  applyFontSettings(state.fontSettings);
+
+  if (openSettingsBtn) {
+    openSettingsBtn.addEventListener('click', () => {
+      populateSettingsData();
+      openSettingsSubview('settings-hub');
+      switchTab('settings-view');
     });
   }
 
-  if (closeSettingsBtn && settingsModal) {
-    closeSettingsBtn.addEventListener('click', () => {
-      settingsModal.classList.remove('open');
+  document.querySelectorAll('[data-open-settings-sub]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const targetSub = btn.getAttribute('data-open-settings-sub');
+      populateSettingsData();
+      openSettingsSubview(targetSub);
     });
-    settingsModal.addEventListener('click', (e) => {
-      if (e.target === settingsModal) settingsModal.classList.remove('open');
+  });
+
+  document.querySelectorAll('[data-back-settings-hub]').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      openSettingsSubview('settings-hub');
     });
-  }
+  });
 
   if (settingsForm) {
     settingsForm.addEventListener('submit', async (e) => {
@@ -1521,7 +1598,6 @@ function initApp() {
         document.getElementById('user-display-name').textContent = updated.name;
         settingsFeedback.textContent = 'Dados atualizados com sucesso!';
         settingsFeedback.style.color = 'var(--emerald)';
-        setTimeout(() => settingsModal.classList.remove('open'), 700);
       } catch (err) {
         settingsFeedback.textContent = `Erro ao salvar: ${err.message}`;
         settingsFeedback.style.color = 'var(--coral)';
@@ -1533,9 +1609,41 @@ function initApp() {
   if (resetAllBtn) {
     resetAllBtn.addEventListener('click', () => {
       if (!confirm('Tem certeza que deseja zerar todos os dados financeiros desta conta?')) return;
+      const currentFonts = { ...DEFAULT_FONT_SETTINGS, ...(state.fontSettings || {}) };
       state = getInitialSeedData();
+      state.fontSettings = currentFonts;
       persistAndRender();
-      if (settingsModal) settingsModal.classList.remove('open');
+      if (settingsFeedback) {
+        settingsFeedback.textContent = 'Todos os lançamentos financeiros foram zerados.';
+        settingsFeedback.style.color = 'var(--emerald)';
+      }
+    });
+  }
+
+  // Controles de Arraste (Sliders) para Tamanho das Fontes de Texto
+  const fontSliderKeys = ['titles', 'body', 'buttons', 'inputs', 'numbers'];
+  fontSliderKeys.forEach((key) => {
+    const slider = document.getElementById(`font-slider-${key}`);
+    if (!slider) return;
+    slider.addEventListener('input', () => {
+      state.fontSettings = {
+        ...DEFAULT_FONT_SETTINGS,
+        ...(state.fontSettings || {}),
+        [key]: Number(slider.value)
+      };
+      applyFontSettings(state.fontSettings);
+    });
+    slider.addEventListener('change', () => {
+      persistAndRender();
+    });
+  });
+
+  const resetFontsBtn = document.getElementById('reset-fonts-btn');
+  if (resetFontsBtn) {
+    resetFontsBtn.addEventListener('click', () => {
+      state.fontSettings = { ...DEFAULT_FONT_SETTINGS };
+      applyFontSettings(state.fontSettings);
+      persistAndRender();
     });
   }
 
