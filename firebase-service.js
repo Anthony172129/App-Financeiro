@@ -287,6 +287,16 @@ export class FinanceAuthAndStorageService {
     return isEmail ? { email: raw, phone: '' } : { email: '', phone: raw };
   }
 
+  async sendOfficialPasswordReset(email) {
+    await this.init();
+    const cleanEmail = String(email || '').trim();
+    if (!cleanEmail || !cleanEmail.includes('@')) {
+      throw new Error('Digite seu e-mail (Gmail) acima para receber o link de redefinição de senha.');
+    }
+    await this.sendPasswordResetEmail(this.auth, cleanEmail);
+    return { email: cleanEmail };
+  }
+
   async resetPasswordWithVerifiedCode(identifier, newPassword) {
     await this.init();
     const record = await this.lookupAccountByIdentifier(identifier);
@@ -304,12 +314,15 @@ export class FinanceAuthAndStorageService {
         await this.signOut(this.auth);
         return { updatedInCloud: true, email: targetEmail };
       } catch (err) {
-        console.warn('Tentativa direta de updatePassword falhou, salvando nova credencial:', err);
+        console.warn('Tentativa direta de updatePassword falhou, enviando e-mail oficial do Firebase:', err);
       }
     }
 
-    await this._saveAccountLookup(record.uid || 'local', targetEmail, record.phone || '', newPassword);
-    return { updatedInCloud: true, email: targetEmail };
+    // Se a conta foi criada antes do token local existir, dispara o link oficial do Firebase para o Gmail
+    await this.sendPasswordResetEmail(this.auth, targetEmail);
+    throw new Error(
+      `Por segurança do Google Firebase, enviamos um link oficial de redefinição para o seu Gmail (${targetEmail}). Abra seu Gmail (ou Spam), clique no link para definir a nova senha e depois faça login aqui.`
+    );
   }
 
   async registerUser({ name, age, phone, email, password }, initialFinances) {
@@ -358,16 +371,30 @@ export class FinanceAuthAndStorageService {
 
   async loginUser(email, password) {
     await this.init();
-    const userCredential = await this.signInWithEmailAndPassword(this.auth, email, password);
-    const user = userCredential.user;
-    await this.loadUserProfile(user.uid);
-    await this._saveAccountLookup(
-      user.uid,
-      email,
-      (this.userProfile && this.userProfile.phone) || '',
-      password
-    );
-    return { user, profile: this.userProfile };
+    const cleanEmail = String(email || '').trim();
+    try {
+      const userCredential = await this.signInWithEmailAndPassword(this.auth, cleanEmail, password);
+      const user = userCredential.user;
+      await this.loadUserProfile(user.uid);
+      await this._saveAccountLookup(
+        user.uid,
+        cleanEmail,
+        (this.userProfile && this.userProfile.phone) || '',
+        password
+      );
+      return { user, profile: this.userProfile };
+    } catch (err) {
+      const code = err && err.code ? err.code : '';
+      if (code === 'auth/invalid-credential' || code === 'auth/wrong-password' || code === 'auth/user-not-found') {
+        throw new Error(
+          'E-mail ou senha incorretos (auth/invalid-credential). Verifique se o e-mail foi digitado corretamente ou toque em "Esqueci minha senha" para redefinir pelo seu Gmail.'
+        );
+      }
+      if (code === 'auth/too-many-requests') {
+        throw new Error('Muitas tentativas seguidas. Aguarde alguns instantes ou redefina sua senha.');
+      }
+      throw err;
+    }
   }
 
   async logout() {

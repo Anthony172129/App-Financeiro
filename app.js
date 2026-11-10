@@ -1724,6 +1724,15 @@ function initApp() {
     showAuthStep('register');
   });
 
+  // Preenche o último e-mail usado para evitar erro de autofill em branco no celular
+  const loginEmailEl = document.getElementById('login-email');
+  try {
+    const savedEmail = localStorage.getItem('app_financeiro_last_email');
+    if (loginEmailEl && savedEmail && !loginEmailEl.value) {
+      loginEmailEl.value = savedEmail;
+    }
+  } catch (_) {}
+
   // Form: Login -> Verifica se já marcou "Permanecer"; caso contrário, pede 2FA + "Permanecer conectado?"
   formLogin.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -1733,6 +1742,9 @@ function initApp() {
 
     const email = document.getElementById('login-email').value.trim();
     const password = document.getElementById('login-password').value;
+    try {
+      if (email) localStorage.setItem('app_financeiro_last_email', email);
+    } catch (_) {}
 
     pendingAuthFlow = true;
     try {

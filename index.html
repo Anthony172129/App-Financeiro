@@ -1257,16 +1257,16 @@
       <form id="form-auth-login" class="auth-form">
         <div class="form-group">
           <label for="login-email">Seu E-mail / Gmail</label>
-          <input id="login-email" class="form-control" type="email" placeholder="exemplo@gmail.com" required autocomplete="email" />
+          <input id="login-email" name="email" class="form-control" type="email" placeholder="exemplo@gmail.com" required autocomplete="username email" />
         </div>
         <div class="form-group">
-          <div style="display: flex; justify-content: space-between; align-items: center">
-            <label for="login-password">Senha</label>
+          <label for="login-password">Senha</label>
+          <input id="login-password" name="password" class="form-control" type="password" placeholder="Sua senha secreta" required autocomplete="current-password" />
+          <div style="display: flex; justify-content: flex-end; margin-top: 4px">
             <button id="open-forgot-password-btn" type="button" class="plain-small-action-btn">
               Esqueci minha senha
             </button>
           </div>
-          <input id="login-password" class="form-control" type="password" placeholder="Sua senha secreta" required autocomplete="current-password" />
         </div>
         <p id="login-feedback" class="auth-feedback"></p>
         <button id="submit-login-btn" type="submit" class="btn btn-primary" style="width: 100%; padding: 12px">
