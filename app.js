@@ -173,6 +173,25 @@ function applyColorSettings(colorCfg) {
   });
 }
 
+const DEFAULT_EXPENSE_CATEGORIES = [
+  { id: 'cat-moradia', name: 'Moradia / Aluguel', emoji: '🏠' },
+  { id: 'cat-contas', name: 'Contas Fixas (Luz, Água, Net)', emoji: '💡' },
+  { id: 'cat-alimentacao', name: 'Alimentação / Mercado', emoji: '🛒' },
+  { id: 'cat-transporte', name: 'Transporte / Uber / Combustível', emoji: '🚗' },
+  { id: 'cat-lazer', name: 'Lazer / Saídas', emoji: '🎉' },
+  { id: 'cat-saude', name: 'Saúde', emoji: '💊' },
+  { id: 'cat-outros', name: 'Outros', emoji: '📦' }
+];
+
+const AVAILABLE_CATEGORY_EMOJIS = [
+  '📦', '🏠', '💡', '🛒', '🍔', '🍕', '☕', '🚗',
+  '⛽', '🚌', '✈️', '🎉', '🎮', '💊', '🏥', '🏋️',
+  '📚', '🎓', '👕', '💇', '💻', '📱', '🌐', '🐶',
+  '🎁', '🛠️', '🔑', '💳', '🏦', '📄', '⚡', '💧'
+];
+
+const getDefaultExpenseCategories = () => DEFAULT_EXPENSE_CATEGORIES.map((c) => ({ ...c }));
+
 const getInitialSeedData = () => {
   return {
     incomes: [],
@@ -183,6 +202,7 @@ const getInitialSeedData = () => {
     vaultGoals: [],
     vaultMovements: [],
     recurringIncomes: [],
+    expenseCategories: getDefaultExpenseCategories(),
     fontSettings: loadCachedFontSettings(),
     colorSettings: loadCachedColorSettings()
   };
@@ -197,6 +217,8 @@ let activeProfile = null;
 let pendingAuthFlow = false;
 let currentVerificationCode = '';
 let forgotPasswordCodeVerified = false;
+let editingCategoryId = null;
+let selectedCategoryEmoji = '📦';
 
 // Service de Autenticação e Firestore
 const authService = new FinanceAuthAndStorageService(
@@ -216,6 +238,10 @@ const authService = new FinanceAuthAndStorageService(
         vaultGoals: remoteData.vaultGoals || [],
         vaultMovements: remoteData.vaultMovements || [],
         recurringIncomes: remoteData.recurringIncomes || [],
+        expenseCategories:
+          Array.isArray(remoteData.expenseCategories) && remoteData.expenseCategories.length > 0
+            ? remoteData.expenseCategories
+            : getDefaultExpenseCategories(),
         fontSettings: { ...DEFAULT_FONT_SETTINGS, ...(remoteData.fontSettings || loadCachedFontSettings()) },
         colorSettings: { ...DEFAULT_COLOR_SETTINGS, ...(remoteData.colorSettings || loadCachedColorSettings()) }
       };
@@ -1737,6 +1763,137 @@ function renderVaultView(summary) {
   }
 }
 
+function ensureExpenseCategories() {
+  if (!Array.isArray(state.expenseCategories) || state.expenseCategories.length === 0) {
+    state.expenseCategories = getDefaultExpenseCategories();
+  }
+  return state.expenseCategories;
+}
+
+function formatCategoryOptionLabel(cat) {
+  const emoji = (cat.emoji || '📦').trim();
+  const name = (cat.name || 'Outros').trim();
+  return `${emoji} ${name}`;
+}
+
+function resetCategoryFormState() {
+  editingCategoryId = null;
+  selectedCategoryEmoji = '📦';
+  const emojiSpan = document.getElementById('cat-selected-emoji');
+  const nameInput = document.getElementById('cat-name-input');
+  const saveBtn = document.getElementById('save-category-btn');
+  const cancelBtn = document.getElementById('cancel-edit-category-btn');
+  const palette = document.getElementById('cat-emoji-palette');
+  const titleEl = document.getElementById('category-manager-title');
+  if (emojiSpan) emojiSpan.textContent = selectedCategoryEmoji;
+  if (nameInput) nameInput.value = '';
+  if (saveBtn) saveBtn.textContent = '+ Adicionar Categoria';
+  if (cancelBtn) cancelBtn.style.display = 'none';
+  if (palette) palette.style.display = 'none';
+  if (titleEl) titleEl.textContent = 'Gerenciar Categorias de Gastos';
+}
+
+function renderExpenseCategoriesDropdownAndManager() {
+  const categories = ensureExpenseCategories();
+  const selectEl = document.getElementById('pix-category');
+  const listEl = document.getElementById('manage-categories-list');
+  const paletteEl = document.getElementById('cat-emoji-palette');
+  const emojiSpan = document.getElementById('cat-selected-emoji');
+
+  if (emojiSpan) {
+    emojiSpan.textContent = selectedCategoryEmoji || '📦';
+  }
+
+  if (selectEl) {
+    const previousValue = selectEl.value;
+    selectEl.innerHTML = categories
+      .map((cat) => {
+        const label = formatCategoryOptionLabel(cat);
+        return `<option value="${label.replace(/"/g, '&quot;')}">${label}</option>`;
+      })
+      .join('');
+    if (previousValue && Array.from(selectEl.options).some((opt) => opt.value === previousValue)) {
+      selectEl.value = previousValue;
+    }
+  }
+
+  if (paletteEl) {
+    paletteEl.innerHTML = AVAILABLE_CATEGORY_EMOJIS.map(
+      (em) =>
+        `<button type="button" class="cat-emoji-option ${em === selectedCategoryEmoji ? 'selected' : ''}" data-pick-cat-emoji="${em}">${em}</button>`
+    ).join('');
+    paletteEl.querySelectorAll('[data-pick-cat-emoji]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        selectedCategoryEmoji = btn.getAttribute('data-pick-cat-emoji') || '📦';
+        if (emojiSpan) emojiSpan.textContent = selectedCategoryEmoji;
+        paletteEl.style.display = 'none';
+        renderExpenseCategoriesDropdownAndManager();
+      });
+    });
+  }
+
+  if (listEl) {
+    listEl.innerHTML = categories
+      .map(
+        (cat) => `
+        <div class="manage-category-item">
+          <div class="manage-category-label" title="${formatCategoryOptionLabel(cat)}">
+            <span class="manage-category-emoji">${cat.emoji || '📦'}</span>
+            <span>${cat.name}</span>
+          </div>
+          <div class="manage-category-actions">
+            <button type="button" class="btn btn-secondary btn-sm" data-edit-exp-cat="${cat.id}" style="padding: 4px 8px; font-size: 0.74rem">
+              Editar
+            </button>
+            <button type="button" class="btn btn-danger btn-sm" data-del-exp-cat="${cat.id}" style="padding: 4px 8px; font-size: 0.74rem">
+              Remover
+            </button>
+          </div>
+        </div>
+      `
+      )
+      .join('');
+
+    listEl.querySelectorAll('[data-edit-exp-cat]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const catId = btn.getAttribute('data-edit-exp-cat');
+        const target = categories.find((c) => c.id === catId);
+        if (!target) return;
+        editingCategoryId = target.id;
+        selectedCategoryEmoji = target.emoji || '📦';
+        const nameInput = document.getElementById('cat-name-input');
+        const saveBtn = document.getElementById('save-category-btn');
+        const cancelBtn = document.getElementById('cancel-edit-category-btn');
+        const titleEl = document.getElementById('category-manager-title');
+        if (emojiSpan) emojiSpan.textContent = selectedCategoryEmoji;
+        if (nameInput) {
+          nameInput.value = target.name || '';
+          nameInput.focus();
+        }
+        if (saveBtn) saveBtn.textContent = 'Salvar Edição';
+        if (cancelBtn) cancelBtn.style.display = '';
+        if (titleEl) titleEl.textContent = `Editando: ${target.emoji || '📦'} ${target.name}`;
+        renderExpenseCategoriesDropdownAndManager();
+      });
+    });
+
+    listEl.querySelectorAll('[data-del-exp-cat]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const catId = btn.getAttribute('data-del-exp-cat');
+        if (categories.length <= 1) {
+          alert('Mantenha pelo menos 1 categoria cadastrada.');
+          return;
+        }
+        state.expenseCategories = categories.filter((c) => c.id !== catId);
+        if (editingCategoryId === catId) {
+          resetCategoryFormState();
+        }
+        persistAndRender();
+      });
+    });
+  }
+}
+
 // Render Everything
 function renderAll() {
   document.getElementById('current-month-label').textContent = formatMonthLabel(selectedMonth);
@@ -1751,6 +1908,7 @@ function renderAll() {
   document.getElementById('nav-badge-pix').textContent = String(summary.pixExpenses.length);
   document.getElementById('nav-badge-debts').textContent = String(state.debts.filter((d) => d.status !== 'Quitada').length);
 
+  renderExpenseCategoriesDropdownAndManager();
   renderOverview(summary);
   renderCardsView(summary);
   renderPixAndIncomesView(summary);
@@ -2348,6 +2506,105 @@ function initApp() {
     persistAndRender();
     closeFormDrawer();
   });
+
+  // Gerenciador de Categorias de Gastos (em "Saídas" -> "Registrar Gasto")
+  const toggleManageCatBtn = document.getElementById('toggle-manage-categories-btn');
+  const closeManageCatBtn = document.getElementById('close-manage-categories-btn');
+  const catManagerPanel = document.getElementById('category-manager-panel');
+  const emojiPickerBtn = document.getElementById('cat-emoji-picker-btn');
+  const emojiPalette = document.getElementById('cat-emoji-palette');
+  const saveCategoryBtn = document.getElementById('save-category-btn');
+  const cancelEditCatBtn = document.getElementById('cancel-edit-category-btn');
+  const catNameInput = document.getElementById('cat-name-input');
+
+  if (toggleManageCatBtn && catManagerPanel) {
+    toggleManageCatBtn.addEventListener('click', () => {
+      const isOpen = catManagerPanel.style.display !== 'none';
+      catManagerPanel.style.display = isOpen ? 'none' : 'flex';
+      if (!isOpen) {
+        resetCategoryFormState();
+        renderExpenseCategoriesDropdownAndManager();
+      }
+    });
+  }
+
+  if (closeManageCatBtn && catManagerPanel) {
+    closeManageCatBtn.addEventListener('click', () => {
+      catManagerPanel.style.display = 'none';
+      resetCategoryFormState();
+    });
+  }
+
+  if (emojiPickerBtn && emojiPalette) {
+    emojiPickerBtn.addEventListener('click', () => {
+      const isVisible = emojiPalette.style.display !== 'none';
+      emojiPalette.style.display = isVisible ? 'none' : 'grid';
+    });
+  }
+
+  if (cancelEditCatBtn) {
+    cancelEditCatBtn.addEventListener('click', () => {
+      resetCategoryFormState();
+      renderExpenseCategoriesDropdownAndManager();
+    });
+  }
+
+  const handleSaveExpenseCategory = () => {
+    if (!catNameInput) return;
+    const rawName = catNameInput.value.trim();
+    if (!rawName) {
+      catNameInput.focus();
+      return;
+    }
+    const categories = ensureExpenseCategories();
+    const emoji = (selectedCategoryEmoji || '📦').trim();
+    let newSelectedValue = `${emoji} ${rawName}`;
+
+    if (editingCategoryId) {
+      const target = categories.find((c) => c.id === editingCategoryId);
+      if (target) {
+        const oldLabel = formatCategoryOptionLabel(target);
+        const oldNameOnly = target.name;
+        target.name = rawName;
+        target.emoji = emoji;
+        newSelectedValue = formatCategoryOptionLabel(target);
+        // Atualiza gastos existentes que usavam o nome antigo da categoria
+        state.pixExpenses.forEach((p) => {
+          if (p.category === oldLabel || p.category === oldNameOnly) {
+            p.category = newSelectedValue;
+          }
+        });
+      }
+    } else {
+      const newCat = {
+        id: `cat-${Date.now()}`,
+        name: rawName,
+        emoji
+      };
+      categories.push(newCat);
+      newSelectedValue = formatCategoryOptionLabel(newCat);
+    }
+
+    resetCategoryFormState();
+    persistAndRender();
+    const selectEl = document.getElementById('pix-category');
+    if (selectEl) {
+      selectEl.value = newSelectedValue;
+    }
+  };
+
+  if (saveCategoryBtn) {
+    saveCategoryBtn.addEventListener('click', handleSaveExpenseCategory);
+  }
+
+  if (catNameInput) {
+    catNameInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        handleSaveExpenseCategory();
+      }
+    });
+  }
 
   // Form: Add Pix / Dinheiro Expense
   document.getElementById('form-add-pix').addEventListener('submit', (e) => {

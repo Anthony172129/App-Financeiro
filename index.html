@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20261115c" />
+  <link rel="stylesheet" href="./styles.css?v=20261115d" />
 </head>
 <body>
   <div class="app-shell">
@@ -631,17 +631,53 @@
                   <input id="pix-amount" class="form-control" type="number" step="0.01" min="0.01" placeholder="0.00" required />
                 </div>
                 <div class="form-group">
-                  <label for="pix-category">Categoria</label>
-                  <select id="pix-category" class="form-control">
-                    <option value="Moradia">Moradia / Aluguel</option>
-                    <option value="Contas Fixas">Contas Fixas (Luz, Água, Net)</option>
-                    <option value="Alimentação">Alimentação / Mercado</option>
-                    <option value="Transporte">Transporte / Uber / Combustível</option>
-                    <option value="Lazer">Lazer / Saídas</option>
-                    <option value="Saúde">Saúde</option>
-                    <option value="Outros">Outros</option>
-                  </select>
+                  <div class="category-label-row">
+                    <label for="pix-category">Categoria</label>
+                    <button id="toggle-manage-categories-btn" type="button" class="manage-categories-trigger-btn">
+                      &#9881; Gerenciar Categorias
+                    </button>
+                  </div>
+                  <select id="pix-category" class="form-control"></select>
                 </div>
+              </div>
+
+              <!-- Painel de Gerenciamento de Categorias de Gastos (Adicionar, Editar, Remover + Botão separado de Emoji) -->
+              <div id="category-manager-panel" class="category-manager-panel" style="display: none">
+                <div class="category-manager-header">
+                  <strong id="category-manager-title">Gerenciar Categorias de Gastos</strong>
+                  <button id="close-manage-categories-btn" type="button" class="drawer-close-btn" style="width: 28px; height: 28px; font-size: 0.85rem" aria-label="Fechar gerenciador">&#10005;</button>
+                </div>
+
+                <div class="category-manager-form">
+                  <div class="category-inputs-row">
+                    <!-- Botão separado apenas para escolher o emoji -->
+                    <div class="emoji-picker-wrapper">
+                      <button id="cat-emoji-picker-btn" type="button" class="btn btn-secondary emoji-picker-trigger" title="Escolher Emoji">
+                        <span id="cat-selected-emoji" class="cat-selected-emoji">&#128230;</span>
+                        <span>Emoji</span>
+                      </button>
+                    </div>
+
+                    <!-- Campo separado apenas para o Nome da categoria -->
+                    <div class="category-name-wrapper">
+                      <input id="cat-name-input" class="form-control" type="text" placeholder="Nome da categoria (ex: Mercado, Academia...)" />
+                    </div>
+                  </div>
+
+                  <!-- Seletor visual de Emojis (abre ao clicar no botão Emoji) -->
+                  <div id="cat-emoji-palette" class="cat-emoji-palette" style="display: none"></div>
+
+                  <div class="category-form-actions">
+                    <button id="save-category-btn" type="button" class="btn btn-primary btn-sm">
+                      + Adicionar Categoria
+                    </button>
+                    <button id="cancel-edit-category-btn" type="button" class="btn btn-secondary btn-sm" style="display: none">
+                      Cancelar Edição
+                    </button>
+                  </div>
+                </div>
+
+                <div id="manage-categories-list" class="manage-categories-list"></div>
               </div>
               <div class="form-group">
                 <label for="pix-date">Data do Pagamento</label>
@@ -1432,6 +1468,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261115c"></script>
+  <script type="module" src="./app.js?v=20261115d"></script>
 </body>
 </html>
