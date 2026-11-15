@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20261115a" />
+  <link rel="stylesheet" href="./styles.css?v=20261115b" />
 </head>
 <body>
   <div class="app-shell">
@@ -174,20 +174,25 @@
           </div>
         </div>
 
-        <!-- Exibir Saídas (limitado a 4 itens com botão para exibir todos) -->
+        <!-- Exibir Saídas (4 itens em formato de carrossel por padrão, com botão para expandir todos) -->
         <div class="schedule-section">
           <div class="schedule-header">
             <div class="schedule-header-text">
               <h3>Exibir Saídas</h3>
             </div>
-            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+            <div class="schedule-header-actions">
               <span id="schedule-count-badge" class="nav-badge">0 itens no mês</span>
+              <div id="schedule-carousel-nav" class="schedule-carousel-nav">
+                <button id="schedule-carousel-prev" type="button" class="carousel-arrow-btn" title="Anterior" aria-label="Item anterior">&#9664;</button>
+                <button id="schedule-carousel-next" type="button" class="carousel-arrow-btn" title="Próximo" aria-label="Próximo item">&#9654;</button>
+              </div>
               <button id="toggle-schedule-all-btn" type="button" class="btn btn-secondary btn-sm">
                 Exibir todos os itens
               </button>
             </div>
           </div>
-          <div id="due-schedule-grid" class="kpi-grid schedule-cards-grid"></div>
+          <div id="due-schedule-grid" class="kpi-grid schedule-cards-grid schedule-carousel-mode"></div>
+          <div id="schedule-carousel-dots" class="schedule-carousel-dots"></div>
         </div>
 
         <div class="cycle-hero">
@@ -1427,6 +1432,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261115a"></script>
+  <script type="module" src="./app.js?v=20261115b"></script>
 </body>
 </html>

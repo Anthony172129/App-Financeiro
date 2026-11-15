@@ -703,13 +703,31 @@ function renderPieSVG(summary) {
 }
 
 let showAllScheduleItems = false;
+let currentScheduleSlide = 0;
 
-// Renderiza os containers em "Exibir Saídas" em ordem de data prevista de pagamento,
-// limitando por padrão a 4 itens com botão para exibir todos
+function scrollToScheduleSlide(index) {
+  const grid = document.getElementById('due-schedule-grid');
+  if (!grid || showAllScheduleItems) return;
+  const cards = Array.from(grid.querySelectorAll('.schedule-kpi-card'));
+  if (cards.length === 0) return;
+  const targetIndex = ((index % cards.length) + cards.length) % cards.length;
+  currentScheduleSlide = targetIndex;
+  const targetCard = cards[targetIndex];
+  const scrollLeft = targetCard.offsetLeft - grid.offsetLeft;
+  grid.scrollTo({ left: scrollLeft, behavior: 'smooth' });
+  document.querySelectorAll('#schedule-carousel-dots .schedule-carousel-dot').forEach((dot, idx) => {
+    dot.classList.toggle('active', idx === targetIndex);
+  });
+}
+
+// Renderiza os containers em "Exibir Saídas" em formato de carrossel (4 itens) por padrão,
+// com possibilidade de expandir todos os itens pelo botão
 function renderDueScheduleCards(summary) {
   const grid = document.getElementById('due-schedule-grid');
   const countBadge = document.getElementById('schedule-count-badge');
   const toggleBtn = document.getElementById('toggle-schedule-all-btn');
+  const carouselNav = document.getElementById('schedule-carousel-nav');
+  const carouselDots = document.getElementById('schedule-carousel-dots');
   if (!grid) return;
 
   const items = [];
@@ -858,6 +876,9 @@ function renderDueScheduleCards(summary) {
 
   const visibleItems = showAllScheduleItems ? items : items.slice(0, 4);
 
+  grid.classList.toggle('schedule-carousel-mode', !showAllScheduleItems);
+  grid.classList.toggle('schedule-expanded-mode', showAllScheduleItems);
+
   if (countBadge) {
     const urgentCount = items.filter((i) => i.isUrgent).length;
     countBadge.textContent =
@@ -870,7 +891,7 @@ function renderDueScheduleCards(summary) {
 
   if (toggleBtn) {
     if (showAllScheduleItems) {
-      toggleBtn.textContent = 'Mostrar apenas 4 itens';
+      toggleBtn.textContent = 'Voltar para carrossel (4 itens)';
     } else if (items.length > 4) {
       toggleBtn.textContent = `Exibir todos os itens (${items.length})`;
     } else {
@@ -878,7 +899,12 @@ function renderDueScheduleCards(summary) {
     }
   }
 
+  if (carouselNav) {
+    carouselNav.classList.toggle('hidden', showAllScheduleItems || visibleItems.length <= 1);
+  }
+
   if (items.length === 0) {
+    if (carouselDots) carouselDots.classList.add('hidden');
     grid.innerHTML = `
       <div class="kpi-card schedule-empty-card" style="grid-column: 1 / -1">
         <div class="kpi-top">
@@ -895,8 +921,8 @@ function renderDueScheduleCards(summary) {
 
   grid.innerHTML = visibleItems
     .map(
-      (item) => `
-      <div class="kpi-card schedule-kpi-card ${item.isUrgent ? 'schedule-kpi-urgent' : ''}">
+      (item, idx) => `
+      <div class="kpi-card schedule-kpi-card ${item.isUrgent ? 'schedule-kpi-urgent' : ''}" data-schedule-idx="${idx}">
         <div class="kpi-top">
           <span class="schedule-card-type">
             ${item.isUrgent ? '<span class="due-exclamation-badge" title="Próximo do vencimento ou em atraso!">!</span>' : ''}
@@ -919,6 +945,27 @@ function renderDueScheduleCards(summary) {
     `
     )
     .join('');
+
+  if (carouselDots) {
+    if (showAllScheduleItems || visibleItems.length <= 1) {
+      carouselDots.classList.add('hidden');
+      carouselDots.innerHTML = '';
+    } else {
+      carouselDots.classList.remove('hidden');
+      if (currentScheduleSlide >= visibleItems.length) currentScheduleSlide = 0;
+      carouselDots.innerHTML = visibleItems
+        .map(
+          (_, idx) =>
+            `<button type="button" class="schedule-carousel-dot ${idx === currentScheduleSlide ? 'active' : ''}" data-schedule-dot="${idx}" aria-label="Ir para item ${idx + 1}"></button>`
+        )
+        .join('');
+      carouselDots.querySelectorAll('[data-schedule-dot]').forEach((dot) => {
+        dot.addEventListener('click', () => {
+          scrollToScheduleSlide(parseInt(dot.getAttribute('data-schedule-dot'), 10) || 0);
+        });
+      });
+    }
+  }
 }
 
 // Render Overview & Recent Transactions
@@ -1728,6 +1775,47 @@ function initApp() {
       showAllScheduleItems = !showAllScheduleItems;
       renderOverview(getMonthSummary(selectedMonth));
     });
+  }
+
+  const prevCarouselBtn = document.getElementById('schedule-carousel-prev');
+  const nextCarouselBtn = document.getElementById('schedule-carousel-next');
+  const scheduleGrid = document.getElementById('due-schedule-grid');
+
+  if (prevCarouselBtn) {
+    prevCarouselBtn.addEventListener('click', () => {
+      scrollToScheduleSlide(currentScheduleSlide - 1);
+    });
+  }
+
+  if (nextCarouselBtn) {
+    nextCarouselBtn.addEventListener('click', () => {
+      scrollToScheduleSlide(currentScheduleSlide + 1);
+    });
+  }
+
+  if (scheduleGrid) {
+    scheduleGrid.addEventListener(
+      'scroll',
+      () => {
+        if (showAllScheduleItems) return;
+        const cards = Array.from(scheduleGrid.querySelectorAll('.schedule-kpi-card'));
+        if (cards.length === 0) return;
+        let closestIdx = 0;
+        let minDistance = Infinity;
+        cards.forEach((card, idx) => {
+          const dist = Math.abs(card.offsetLeft - scheduleGrid.offsetLeft - scheduleGrid.scrollLeft);
+          if (dist < minDistance) {
+            minDistance = dist;
+            closestIdx = idx;
+          }
+        });
+        currentScheduleSlide = closestIdx;
+        document.querySelectorAll('#schedule-carousel-dots .schedule-carousel-dot').forEach((dot, idx) => {
+          dot.classList.toggle('active', idx === closestIdx);
+        });
+      },
+      { passive: true }
+    );
   }
 
   // Set default dates in forms
