@@ -57,8 +57,18 @@
                 <rect x="2" y="5" width="20" height="14" rx="2" />
                 <line x1="2" y1="10" x2="22" y2="10" />
               </svg>
-              <span>Cartões &amp; Faturas</span>
+              <span>Cartões</span>
               <span id="nav-badge-cards" class="nav-badge">0</span>
+            </button>
+          </li>
+          <li>
+            <button id="nav-incomes-btn" class="nav-btn" data-target="incomes-view">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                <polyline points="17 6 23 6 23 12" />
+              </svg>
+              <span>Entradas</span>
+              <span id="nav-badge-incomes" class="nav-badge">0</span>
             </button>
           </li>
           <li>
@@ -66,7 +76,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
               </svg>
-              <span>Pix &amp; Entradas</span>
+              <span>Saídas</span>
               <span id="nav-badge-pix" class="nav-badge">0</span>
             </button>
           </li>
@@ -78,7 +88,7 @@
                 <line x1="16" y1="13" x2="8" y2="13" />
                 <line x1="16" y1="17" x2="8" y2="17" />
               </svg>
-              <span>Dívidas &amp; Acordos</span>
+              <span>Dívidas</span>
               <span id="nav-badge-debts" class="nav-badge">0</span>
             </button>
           </li>
@@ -89,7 +99,7 @@
                 <circle cx="12" cy="12" r="3" />
                 <line x1="12" y1="9" x2="12" y2="15" />
               </svg>
-              <span>Cofrinho &amp; Reservas</span>
+              <span>Cofrinhos</span>
               <span id="nav-badge-vault" class="nav-badge">R$ 0</span>
             </button>
           </li>
@@ -164,14 +174,18 @@
           </div>
         </div>
 
-        <!-- Novos Containers em Ordem de Vencimento / Data de Pagamento (Cartões, Dívidas, Pix e Caixinhas) -->
+        <!-- Exibir Saídas (limitado a 4 itens com botão para exibir todos) -->
         <div class="schedule-section">
           <div class="schedule-header">
             <div class="schedule-header-text">
-              <h3>Contas, Faturas &amp; Compromissos por Ordem de Data</h3>
-              <p>Seus cartões, dívidas/acordos, caixinhas e gastos no Pix/Dinheiro ordenados pela data prevista de pagamento (em vermelho quando próximos do vencimento ou atrasados).</p>
+              <h3>Exibir Saídas</h3>
             </div>
-            <span id="schedule-count-badge" class="nav-badge">0 itens no mês</span>
+            <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+              <span id="schedule-count-badge" class="nav-badge">0 itens no mês</span>
+              <button id="toggle-schedule-all-btn" type="button" class="btn btn-secondary btn-sm">
+                Exibir todos os itens
+              </button>
+            </div>
           </div>
           <div id="due-schedule-grid" class="kpi-grid schedule-cards-grid"></div>
         </div>
@@ -243,7 +257,7 @@
         </div>
       </section>
 
-      <!-- 2. ÁREA DE CARTÕES DE CRÉDITO, LIMITES E FATURAS -->
+      <!-- 2. ÁREA DE CARTÕES -->
       <section id="cards-view" class="view-section">
         <div class="section-actions-bar">
           <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-card">
@@ -283,41 +297,12 @@
         </div>
       </section>
 
-      <!-- 3. ÁREA DE GASTOS NO PIX / DINHEIRO E ENTRADAS -->
-      <section id="pix-view" class="view-section">
+      <!-- 3A. ÁREA DE ENTRADAS -->
+      <section id="incomes-view" class="view-section">
         <div class="section-actions-bar">
-          <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-pix">
-            + Registrar Gasto
-          </button>
-          <button type="button" class="btn btn-secondary" data-open-drawer="drawer-add-income">
+          <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-income">
             + Registrar Entrada
           </button>
-        </div>
-
-        <!-- Tabelas de Gastos no Pix e Entradas -->
-        <div class="panel" style="margin-bottom: 24px">
-          <div class="panel-header">
-            <div class="panel-title">
-              <h3>Histórico de Gastos Fora de Cartão (Pix / Dinheiro)</h3>
-              <p>Todos os pagamentos diretos efetuados neste mês.</p>
-            </div>
-            <span id="pix-total-badge" class="tag pix" style="font-family: var(--font-mono); font-size: 0.9rem">R$ 0,00</span>
-          </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th>Destinatário / Meio</th>
-                  <th>Categoria</th>
-                  <th>Data</th>
-                  <th>Valor</th>
-                  <th>Ação</th>
-                </tr>
-              </thead>
-              <tbody id="pix-expenses-tbody"></tbody>
-            </table>
-          </div>
         </div>
 
         <div class="panel">
@@ -340,6 +325,40 @@
                 </tr>
               </thead>
               <tbody id="incomes-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3B. ÁREA DE SAÍDAS (REGISTRAR GASTOS) -->
+      <section id="pix-view" class="view-section">
+        <div class="section-actions-bar">
+          <button type="button" class="btn btn-primary" data-open-drawer="drawer-add-pix">
+            + Registrar Gasto
+          </button>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">
+              <h3>Histórico de Gastos Registrados (Pix / Dinheiro / Saídas)</h3>
+              <p>Todos os pagamentos e saídas diretas efetuados neste mês.</p>
+            </div>
+            <span id="pix-total-badge" class="tag pix" style="font-family: var(--font-mono); font-size: 0.9rem">R$ 0,00</span>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Destinatário / Meio</th>
+                  <th>Categoria</th>
+                  <th>Data</th>
+                  <th>Valor</th>
+                  <th>Ação</th>
+                </tr>
+              </thead>
+              <tbody id="pix-expenses-tbody"></tbody>
             </table>
           </div>
         </div>
@@ -1408,6 +1427,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261110j"></script>
+  <script type="module" src="./app.js?v=20261115a"></script>
 </body>
 </html>

@@ -702,11 +702,14 @@ function renderPieSVG(summary) {
     .join('');
 }
 
-// Renderiza os novos containers (mesmo padrão dos KPIs) em ordem de data prevista de pagamento
-// (Cartões, Dívidas & Acordos, Caixinhas do Cofrinho e Pix / Dinheiro), destacando em vermelho os próximos de vencer ou atrasados
+let showAllScheduleItems = false;
+
+// Renderiza os containers em "Exibir Saídas" em ordem de data prevista de pagamento,
+// limitando por padrão a 4 itens com botão para exibir todos
 function renderDueScheduleCards(summary) {
   const grid = document.getElementById('due-schedule-grid');
   const countBadge = document.getElementById('schedule-count-badge');
+  const toggleBtn = document.getElementById('toggle-schedule-all-btn');
   if (!grid) return;
 
   const items = [];
@@ -757,7 +760,7 @@ function renderDueScheduleCards(summary) {
       id: `sched-debt-${d.id}`,
       day: dueDay,
       dateText: `Vencimento: Dia ${String(dueDay).padStart(2, '0')}`,
-      typeLabel: 'Dívida / Acordo',
+      typeLabel: 'Dívida',
       icon: '&#128196;',
       iconClass: 'debt',
       title: d.creditor,
@@ -788,7 +791,7 @@ function renderDueScheduleCards(summary) {
       id: `sched-vault-${g.id}`,
       day: dueDay,
       dateText: `Data Limite: Dia ${String(dueDay).padStart(2, '0')}`,
-      typeLabel: 'Caixinha / Cofrinho',
+      typeLabel: 'Caixinha / Cofrinhos',
       icon: '&#128176;',
       iconClass: 'income',
       title: g.name,
@@ -803,7 +806,7 @@ function renderDueScheduleCards(summary) {
     });
   });
 
-  // 4. Gastos no Pix / Dinheiro / Cartão Débito do mês (ordenados pelo dia do pagamento)
+  // 4. Gastos / Saídas no Pix, Dinheiro e Cartão Débito do mês (ordenados pelo dia do pagamento)
   summary.pixExpenses.forEach((p) => {
     const day = p.date ? parseInt(p.date.split('-')[2], 10) || 1 : 1;
     const fmtDate = p.date ? p.date.split('-').reverse().join('/') : `Dia ${String(day).padStart(2, '0')}`;
@@ -811,7 +814,7 @@ function renderDueScheduleCards(summary) {
       id: `sched-pix-${p.id}`,
       day,
       dateText: `Data: ${fmtDate}`,
-      typeLabel: `Pix / Dinheiro (${p.category || 'Gasto'})`,
+      typeLabel: `Saída (${p.category || 'Gasto'})`,
       icon: '&#9889;',
       iconClass: 'pix',
       title: p.description,
@@ -820,7 +823,7 @@ function renderDueScheduleCards(summary) {
       isUrgent: false,
       isPaid: true,
       targetTab: 'pix-view',
-      actionLabel: 'Ver Pix / Dinheiro'
+      actionLabel: 'Ver Saídas'
     });
   });
 
@@ -853,30 +856,44 @@ function renderDueScheduleCards(summary) {
     return 0;
   });
 
+  const visibleItems = showAllScheduleItems ? items : items.slice(0, 4);
+
   if (countBadge) {
     const urgentCount = items.filter((i) => i.isUrgent).length;
     countBadge.textContent =
-      urgentCount > 0 ? `${items.length} item(ns) • ${urgentCount} em alerta !` : `${items.length} item(ns) por ordem de data`;
+      urgentCount > 0
+        ? `Exibindo ${visibleItems.length} de ${items.length} • ${urgentCount} em alerta !`
+        : `Exibindo ${visibleItems.length} de ${items.length} item(ns)`;
     countBadge.style.color = urgentCount > 0 ? '#fecdd3' : '';
     countBadge.style.backgroundColor = urgentCount > 0 ? 'rgba(244, 63, 94, 0.28)' : '';
+  }
+
+  if (toggleBtn) {
+    if (showAllScheduleItems) {
+      toggleBtn.textContent = 'Mostrar apenas 4 itens';
+    } else if (items.length > 4) {
+      toggleBtn.textContent = `Exibir todos os itens (${items.length})`;
+    } else {
+      toggleBtn.textContent = 'Exibir todos os itens';
+    }
   }
 
   if (items.length === 0) {
     grid.innerHTML = `
       <div class="kpi-card schedule-empty-card" style="grid-column: 1 / -1">
         <div class="kpi-top">
-          <span>Nenhum cartão, dívida, caixinha ou Pix registrado neste mês</span>
+          <span>Nenhuma saída registrada neste mês</span>
           <div class="kpi-icon net">&#128197;</div>
         </div>
         <div class="kpi-sub">
-          <span>Assim que você registrar cartões, dívidas/acordos, caixinhas ou gastos no Pix/Dinheiro, novos containers aparecerão aqui em ordem de data de pagamento.</span>
+          <span>Assim que você registrar cartões, dívidas, cofrinhos ou saídas, os itens aparecerão aqui.</span>
         </div>
       </div>
     `;
     return;
   }
 
-  grid.innerHTML = items
+  grid.innerHTML = visibleItems
     .map(
       (item) => `
       <div class="kpi-card schedule-kpi-card ${item.isUrgent ? 'schedule-kpi-urgent' : ''}">
@@ -925,7 +942,7 @@ function renderOverview(summary) {
   const committedPct = totalIncome > 0 ? Math.round((totalExpenses / totalIncome) * 100) : 0;
   document.getElementById('kpi-net-sub').textContent = `${committedPct}% da renda comprometida`;
 
-  // Renderiza os novos containers ordenados por data prevista de pagamento (Cartões, Dívidas, Pix, Caixinhas)
+  // Renderiza "Exibir Saídas" ordenado por data (limitado a 4 itens por padrão)
   renderDueScheduleCards(summary);
 
   // Render Pie Chart
@@ -944,14 +961,14 @@ function renderOverview(summary) {
         <span>Teto do Gráfico (Entradas do Mês)</span>
         <strong style="color: var(--emerald)">${formatBRL(totalIncome)}</strong>
       </div>
-      <button class="btn btn-secondary btn-sm" data-goto="pix-view">+ Entrada</button>
+      <button class="btn btn-secondary btn-sm" data-goto="incomes-view">Ver Entradas</button>
     </div>
     <div class="cycle-stat-box">
       <div class="meta">
-        <span>Gastos Fora de Cartão (Pix / Dinheiro / Débito)</span>
+        <span>Gastos Fora de Cartão (Saídas / Pix / Dinheiro)</span>
         <strong style="color: var(--sky)">${formatBRL(totalPix)}</strong>
       </div>
-      <button class="btn btn-secondary btn-sm" data-goto="pix-view">+ Pix / Dinheiro</button>
+      <button class="btn btn-secondary btn-sm" data-goto="pix-view">Ver Saídas</button>
     </div>
     <div class="cycle-stat-box">
       <div class="meta">
@@ -972,7 +989,7 @@ function renderOverview(summary) {
         <span>Guardado nas Caixinhas neste Mês (Descontado do Bruto)</span>
         <strong style="color: var(--teal)">${formatBRL(totalVaultMonth)}</strong>
       </div>
-      <button class="btn btn-secondary btn-sm" data-goto="vault-view">Ver Cofrinho</button>
+      <button class="btn btn-secondary btn-sm" data-goto="vault-view">Ver Cofrinhos</button>
     </div>
   `;
 
@@ -1676,6 +1693,10 @@ function renderAll() {
 
   // Update nav badges
   document.getElementById('nav-badge-cards').textContent = String(state.cards.length);
+  const incomesBadge = document.getElementById('nav-badge-incomes');
+  if (incomesBadge) {
+    incomesBadge.textContent = String(summary.incomes.filter((i) => !i.skipped).length);
+  }
   document.getElementById('nav-badge-pix').textContent = String(summary.pixExpenses.length);
   document.getElementById('nav-badge-debts').textContent = String(state.debts.filter((d) => d.status !== 'Quitada').length);
 
@@ -1701,6 +1722,14 @@ function updateFirebaseStatusBadge() {
 
 // Setup Event Listeners
 function initApp() {
+  const toggleScheduleAllBtn = document.getElementById('toggle-schedule-all-btn');
+  if (toggleScheduleAllBtn) {
+    toggleScheduleAllBtn.addEventListener('click', () => {
+      showAllScheduleItems = !showAllScheduleItems;
+      renderOverview(getMonthSummary(selectedMonth));
+    });
+  }
+
   // Set default dates in forms
   document.querySelectorAll('input[type="date"]').forEach((inp) => {
     if (!inp.value) inp.value = todayISO();
