@@ -874,24 +874,28 @@ function renderDueScheduleCards(summary) {
     return 0;
   });
 
-  const visibleItems = showAllScheduleItems ? items : items.slice(0, 4);
+  const visibleItems = items;
 
   grid.classList.toggle('schedule-carousel-mode', !showAllScheduleItems);
   grid.classList.toggle('schedule-expanded-mode', showAllScheduleItems);
 
   if (countBadge) {
     const urgentCount = items.filter((i) => i.isUrgent).length;
-    countBadge.textContent =
-      urgentCount > 0
-        ? `Exibindo ${visibleItems.length} de ${items.length} • ${urgentCount} em alerta !`
-        : `Exibindo ${visibleItems.length} de ${items.length} item(ns)`;
+    const simultaneousCount = Math.min(4, items.length);
+    countBadge.textContent = showAllScheduleItems
+      ? urgentCount > 0
+        ? `Exibindo todos (${items.length}) • ${urgentCount} em alerta !`
+        : `Exibindo todos (${items.length} itens)`
+      : urgentCount > 0
+        ? `${simultaneousCount} visíveis de ${items.length} • ${urgentCount} em alerta !`
+        : `${simultaneousCount} visíveis de ${items.length} item(ns)`;
     countBadge.style.color = urgentCount > 0 ? '#fecdd3' : '';
     countBadge.style.backgroundColor = urgentCount > 0 ? 'rgba(244, 63, 94, 0.28)' : '';
   }
 
   if (toggleBtn) {
     if (showAllScheduleItems) {
-      toggleBtn.textContent = 'Voltar para carrossel (4 itens)';
+      toggleBtn.textContent = 'Voltar para carrossel';
     } else if (items.length > 4) {
       toggleBtn.textContent = `Exibir todos os itens (${items.length})`;
     } else {
