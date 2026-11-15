@@ -2657,11 +2657,28 @@ body,
 }
 
 /* ===== GERENCIADOR DE CATEGORIAS DE GASTOS (DENTRO DE REGISTRAR GASTO) ===== */
+.form-row-2 {
+  align-items: end;
+}
+
+.form-row-2 > .form-group > label,
+.form-row-2 > .form-group > .category-label-row {
+  min-height: 26px;
+  display: flex;
+  align-items: center;
+}
+
+.form-row-2 > .form-group > .form-control {
+  height: 46px;
+  box-sizing: border-box;
+}
+
 .category-label-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
 }
 
 .manage-categories-trigger-btn {
@@ -2670,9 +2687,10 @@ body,
   border-radius: 6px;
   color: var(--emerald);
   font-family: var(--font-sans);
-  font-size: 0.76rem;
+  font-size: 0.74rem;
   font-weight: 700;
-  padding: 2px 8px;
+  line-height: 1.1;
+  padding: 3px 7px;
   cursor: pointer;
   transition: var(--transition);
   white-space: nowrap;
