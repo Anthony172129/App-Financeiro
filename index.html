@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20261115e" />
+  <link rel="stylesheet" href="./styles.css?v=20261119a" />
 </head>
 <body>
   <div class="app-shell">
@@ -41,69 +41,113 @@
           <button id="user-logout-btn" class="user-logout-btn" title="Sair da conta">Sair</button>
         </div>
 
-        <ul class="nav-menu">
-          <li>
-            <button id="nav-overview-btn" class="nav-btn active" data-target="overview-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
-                <path d="M22 12A10 10 0 0 0 12 2v10z" />
-              </svg>
-              <span>Ciclo do Dinheiro</span>
-            </button>
-          </li>
-          <li>
-            <button id="nav-cards-btn" class="nav-btn" data-target="cards-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <line x1="2" y1="10" x2="22" y2="10" />
-              </svg>
-              <span>Cartões</span>
-              <span id="nav-badge-cards" class="nav-badge">0</span>
-            </button>
-          </li>
-          <li>
-            <button id="nav-incomes-btn" class="nav-btn" data-target="incomes-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                <polyline points="17 6 23 6 23 12" />
-              </svg>
-              <span>Entradas</span>
-              <span id="nav-badge-incomes" class="nav-badge">0</span>
-            </button>
-          </li>
-          <li>
-            <button id="nav-pix-btn" class="nav-btn" data-target="pix-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-              </svg>
-              <span>Saídas</span>
-              <span id="nav-badge-pix" class="nav-badge">0</span>
-            </button>
-          </li>
-          <li>
-            <button id="nav-debts-btn" class="nav-btn" data-target="debts-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <line x1="16" y1="13" x2="8" y2="13" />
-                <line x1="16" y1="17" x2="8" y2="17" />
-              </svg>
-              <span>Dívidas</span>
-              <span id="nav-badge-debts" class="nav-badge">0</span>
-            </button>
-          </li>
-          <li>
-            <button id="nav-vault-btn" class="nav-btn" data-target="vault-view">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M19 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2z" />
+        <!-- Botão de Menu Colapsável de Seleção de Seções (Mobile & Tablet) -->
+        <button id="mobile-nav-collapse-btn" type="button" class="mobile-nav-collapse-btn" aria-expanded="false" aria-controls="sidebar-nav-collapsible">
+          <div class="mobile-nav-current">
+            <span id="mobile-nav-active-icon" class="nav-custom-icon nav-icon-overview">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 2a10 10 0 0 1 10 10h-8a2 2 0 0 1-2-2V2z" />
+                <path d="M21.17 15.89A10 10 0 1 1 8.11 2.83" />
                 <circle cx="12" cy="12" r="3" />
-                <line x1="12" y1="9" x2="12" y2="15" />
               </svg>
-              <span>Cofrinhos</span>
-              <span id="nav-badge-vault" class="nav-badge">R$ 0</span>
-            </button>
-          </li>
-        </ul>
+            </span>
+            <div class="mobile-nav-labels">
+              <span class="mobile-nav-eyebrow">Seção Atual (Toque para abrir menu)</span>
+              <strong id="mobile-nav-active-title">Ciclo do Dinheiro</strong>
+            </div>
+          </div>
+          <span class="mobile-nav-chevron" aria-hidden="true">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 12 15 18 9" />
+            </svg>
+          </span>
+        </button>
+
+        <div id="sidebar-nav-collapsible" class="sidebar-nav-collapsible">
+          <ul class="nav-menu">
+            <li>
+              <button id="nav-overview-btn" class="nav-btn active" data-target="overview-view">
+                <span class="nav-custom-icon nav-icon-overview">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a10 10 0 0 1 10 10h-8a2 2 0 0 1-2-2V2z" />
+                    <path d="M21.17 15.89A10 10 0 1 1 8.11 2.83" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                </span>
+                <span>Ciclo do Dinheiro</span>
+              </button>
+            </li>
+            <li>
+              <button id="nav-cards-btn" class="nav-btn" data-target="cards-view">
+                <span class="nav-custom-icon nav-icon-cards">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="4" width="20" height="16" rx="3" />
+                    <line x1="2" y1="9" x2="22" y2="9" />
+                    <rect x="5.5" y="12.5" width="4" height="3" rx="0.8" />
+                    <line x1="13" y1="15" x2="18.5" y2="15" />
+                  </svg>
+                </span>
+                <span>Cartões</span>
+                <span id="nav-badge-cards" class="nav-badge">0</span>
+              </button>
+            </li>
+            <li>
+              <button id="nav-incomes-btn" class="nav-btn" data-target="incomes-view">
+                <span class="nav-custom-icon nav-icon-incomes">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="6" width="20" height="14" rx="2.5" />
+                    <circle cx="12" cy="13" r="3" />
+                    <path d="M12 2v4" />
+                    <path d="M9.5 3.5L12 1l2.5 2.5" />
+                  </svg>
+                </span>
+                <span>Entradas</span>
+                <span id="nav-badge-incomes" class="nav-badge">0</span>
+              </button>
+            </li>
+            <li>
+              <button id="nav-pix-btn" class="nav-btn" data-target="pix-view">
+                <span class="nav-custom-icon nav-icon-pix">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L4 13.5h7.5L10.5 22 20 10.5h-7.5L13 2z" />
+                    <path d="M17 17l4 4" />
+                    <path d="M21 17v4h-4" />
+                  </svg>
+                </span>
+                <span>Saídas</span>
+                <span id="nav-badge-pix" class="nav-badge">0</span>
+              </button>
+            </li>
+            <li>
+              <button id="nav-debts-btn" class="nav-btn" data-target="debts-view">
+                <span class="nav-custom-icon nav-icon-debts">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <path d="M9 15l2 2 4-4" />
+                    <line x1="9" y1="11" x2="13" y2="11" />
+                  </svg>
+                </span>
+                <span>Dívidas</span>
+                <span id="nav-badge-debts" class="nav-badge">0</span>
+              </button>
+            </li>
+            <li>
+              <button id="nav-vault-btn" class="nav-btn" data-target="vault-view">
+                <span class="nav-custom-icon nav-icon-vault">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="5" width="18" height="15" rx="3" />
+                    <circle cx="12" cy="12.5" r="3.5" />
+                    <line x1="9" y1="2.5" x2="15" y2="2.5" />
+                    <line x1="12" y1="10.5" x2="12" y2="14.5" />
+                  </svg>
+                </span>
+                <span>Cofrinhos</span>
+                <span id="nav-badge-vault" class="nav-badge">R$ 0</span>
+              </button>
+            </li>
+          </ul>
+        </div>
       </div>
     </aside>
 
@@ -113,7 +157,7 @@
       <header class="topbar">
         <div class="page-header">
           <h2>Painel do Ciclo Financeiro</h2>
-          <p>Acompanhe entradas, gastos no Pix/Dinheiro, faturas de cartões, dívidas e cofrinho em um único lugar.</p>
+          <p>Acompanhe entradas, saídas, cartões, dívidas e cofrinhos em um único lugar.</p>
         </div>
 
         <div class="topbar-controls">
@@ -125,60 +169,106 @@
         </div>
       </header>
 
-      <!-- 1. TELA INICIAL: CICLO DO DINHEIRO -->
+      <!-- 1. TELA INICIAL: CICLO DO DINHEIRO (SEPARADO EM CAIXAS COM ÍCONE PERSONALIZADO PARA CADA TEMA) -->
       <section id="overview-view" class="view-section active">
-        <!-- KPI Strip (exclusivo do Ciclo do Dinheiro) -->
-        <div class="kpi-grid" aria-label="Indicadores Principais do Mês">
-          <div class="kpi-card">
-            <div class="kpi-top">
-              <span>Lucro / Entradas (Teto)</span>
-              <div class="kpi-icon income">&#8593;</div>
-            </div>
-            <div id="kpi-income" class="kpi-value">R$ 0,00</div>
-            <div class="kpi-sub">
-              <span id="kpi-income-sub">0 entradas no mês</span>
-            </div>
-          </div>
-
-          <div class="kpi-card">
-            <div class="kpi-top">
-              <span>Gastos Fora de Cartão (Pix / Dinheiro)</span>
-              <div class="kpi-icon pix">&#9889;</div>
-            </div>
-            <div id="kpi-pix" class="kpi-value">R$ 0,00</div>
-            <div class="kpi-sub">
-              <span id="kpi-pix-sub">0% das entradas</span>
+        <!-- CAIXA 1: Resumo & Indicadores do Ciclo Mensal -->
+        <div class="panel overview-topic-box">
+          <div class="panel-header topic-box-header">
+            <div class="topic-box-heading">
+              <div class="topic-box-icon income">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
+              </div>
+              <div class="panel-title">
+                <h3>Resumo de Indicadores do Mês</h3>
+                <p>Balanço imediato entre entradas, saídas diretas, faturas de cartões e saldo livre.</p>
+              </div>
             </div>
           </div>
 
-          <div class="kpi-card">
-            <div class="kpi-top">
-              <span>Faturas de Cartões</span>
-              <div class="kpi-icon cards">&#128179;</div>
+          <div class="kpi-grid" style="margin-bottom: 0" aria-label="Indicadores Principais do Mês">
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>Lucro / Entradas (Teto)</span>
+                <div class="kpi-icon income">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                    <polyline points="17 6 23 6 23 12" />
+                  </svg>
+                </div>
+              </div>
+              <div id="kpi-income" class="kpi-value">R$ 0,00</div>
+              <div class="kpi-sub">
+                <span id="kpi-income-sub">0 entradas no mês</span>
+              </div>
             </div>
-            <div id="kpi-cards" class="kpi-value">R$ 0,00</div>
-            <div class="kpi-sub">
-              <span id="kpi-cards-sub">0% das entradas</span>
-            </div>
-          </div>
 
-          <div class="kpi-card">
-            <div class="kpi-top">
-              <span>Saldo Livre (Sobra Real)</span>
-              <div class="kpi-icon net">&#10003;</div>
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>Gastos Fora de Cartão (Saídas)</span>
+                <div class="kpi-icon pix">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                  </svg>
+                </div>
+              </div>
+              <div id="kpi-pix" class="kpi-value">R$ 0,00</div>
+              <div class="kpi-sub">
+                <span id="kpi-pix-sub">0% das entradas</span>
+              </div>
             </div>
-            <div id="kpi-net" class="kpi-value">R$ 0,00</div>
-            <div class="kpi-sub">
-              <span id="kpi-net-sub">0% da renda comprometida</span>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>Faturas de Cartões</span>
+                <div class="kpi-icon cards">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="5" width="20" height="14" rx="2" />
+                    <line x1="2" y1="10" x2="22" y2="10" />
+                  </svg>
+                </div>
+              </div>
+              <div id="kpi-cards" class="kpi-value">R$ 0,00</div>
+              <div class="kpi-sub">
+                <span id="kpi-cards-sub">0% das entradas</span>
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-top">
+                <span>Saldo Livre (Sobra Real)</span>
+                <div class="kpi-icon net">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                    <path d="M9 12l2 2 4-4" />
+                  </svg>
+                </div>
+              </div>
+              <div id="kpi-net" class="kpi-value">R$ 0,00</div>
+              <div class="kpi-sub">
+                <span id="kpi-net-sub">0% da renda comprometida</span>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Exibir Saídas (4 itens em formato de carrossel por padrão, com botão para expandir todos) -->
-        <div class="schedule-section">
-          <div class="schedule-header">
-            <div class="schedule-header-text">
-              <h3>Exibir Saídas</h3>
+        <!-- CAIXA 2: Exibir Saídas (Carrossel de até 4 itens simultâneos com botão para expandir todos) -->
+        <div class="panel overview-topic-box schedule-section">
+          <div class="schedule-header topic-box-header">
+            <div class="topic-box-heading">
+              <div class="topic-box-icon cards">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                  <line x1="16" y1="2" x2="16" y2="6" />
+                  <line x1="8" y1="2" x2="8" y2="6" />
+                  <line x1="3" y1="10" x2="21" y2="10" />
+                  <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
+                </svg>
+              </div>
+              <div class="schedule-header-text">
+                <h3>Exibir Saídas</h3>
+              </div>
             </div>
             <div class="schedule-header-actions">
               <span id="schedule-count-badge" class="nav-badge">0 itens no mês</span>
@@ -196,12 +286,20 @@
         </div>
 
         <div class="cycle-hero">
-          <!-- Pie Chart Card -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Gráfico do Ciclo do Dinheiro</h3>
-                <p>Suas entradas definem 100% do gráfico; as fatias mostram os gastos, cofrinho e o saldo que sobra.</p>
+          <!-- CAIXA 3: Gráfico do Ciclo do Dinheiro -->
+          <div class="panel overview-topic-box">
+            <div class="panel-header topic-box-header">
+              <div class="topic-box-heading">
+                <div class="topic-box-icon pix">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.21 15.89A10 10 0 1 1 8 2.83" />
+                    <path d="M22 12A10 10 0 0 0 12 2v10z" />
+                  </svg>
+                </div>
+                <div class="panel-title">
+                  <h3>Gráfico do Ciclo do Dinheiro</h3>
+                  <p>Suas entradas definem 100% do gráfico; as fatias mostram os gastos, cofrinhos e o saldo que sobra.</p>
+                </div>
               </div>
               <div class="segmented-control">
                 <button id="pie-mode-origin-btn" class="active" data-pie-mode="origin">Por Origem</button>
@@ -225,24 +323,43 @@
             <div id="deficit-banner" class="deficit-banner" style="display: none"></div>
           </div>
 
-          <!-- Right Column: Cycle Distribution & Quick Jump -->
-          <div class="panel">
-            <div class="panel-header">
-              <div class="panel-title">
-                <h3>Raio-X do Ciclo Mensal</h3>
-                <p>Resumo de limites, faturas, Pix/Dinheiro, dívidas e caixinhas neste mês.</p>
+          <!-- CAIXA 4: Raio-X do Ciclo Mensal -->
+          <div class="panel overview-topic-box">
+            <div class="panel-header topic-box-header">
+              <div class="topic-box-heading">
+                <div class="topic-box-icon net">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+                  </svg>
+                </div>
+                <div class="panel-title">
+                  <h3>Raio-X do Ciclo Mensal</h3>
+                  <p>Resumo de entradas, saídas, cartões, dívidas e cofrinhos neste mês.</p>
+                </div>
               </div>
             </div>
             <div id="overview-side-stats" class="cycle-stats-list"></div>
           </div>
         </div>
 
-        <!-- Unified Movements Table -->
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">
-              <h3>Todas as Movimentações do Mês</h3>
-              <p>Histórico consolidado de entradas, pagamentos no Pix/Dinheiro, compras nos cartões e cofrinho.</p>
+        <!-- CAIXA 5: Todas as Movimentações do Mês -->
+        <div class="panel overview-topic-box">
+          <div class="panel-header topic-box-header">
+            <div class="topic-box-heading">
+              <div class="topic-box-icon debt">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+              </div>
+              <div class="panel-title">
+                <h3>Todas as Movimentações do Mês</h3>
+                <p>Histórico consolidado de entradas, saídas, compras nos cartões e cofrinhos.</p>
+              </div>
             </div>
           </div>
           <div class="table-wrap">
@@ -1468,6 +1585,39 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261115d"></script>
+  <!-- Modal Global de Confirmação nas Decisões (Com Fade In / Fade Out e suporte opcional a campo de valor) -->
+  <div id="decision-confirm-backdrop" class="decision-confirm-backdrop" aria-hidden="true">
+    <div id="decision-confirm-card" class="decision-confirm-card" role="dialog" aria-modal="true" aria-labelledby="decision-modal-title">
+      <div class="decision-modal-top">
+        <div id="decision-modal-icon" class="decision-modal-icon warning">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="8" x2="12" y2="12" />
+            <line x1="12" y1="16" x2="12.01" y2="16" />
+          </svg>
+        </div>
+        <div class="decision-modal-headings">
+          <h3 id="decision-modal-title">Confirmar Ação</h3>
+          <p id="decision-modal-message">Tem certeza de que deseja prosseguir com esta decisão?</p>
+        </div>
+      </div>
+
+      <div id="decision-modal-input-group" class="form-group" style="display: none; margin-top: 4px">
+        <label id="decision-modal-input-label" for="decision-modal-input">Valor (R$)</label>
+        <input id="decision-modal-input" class="form-control" type="number" step="0.01" min="0" placeholder="0.00" />
+      </div>
+
+      <div class="decision-modal-actions">
+        <button id="decision-modal-cancel-btn" type="button" class="btn btn-secondary">
+          Cancelar
+        </button>
+        <button id="decision-modal-confirm-btn" type="button" class="btn btn-primary">
+          Confirmar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./app.js?v=20261119a"></script>
 </body>
 </html>

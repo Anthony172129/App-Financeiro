@@ -746,6 +746,117 @@ function scrollToScheduleSlide(index) {
   });
 }
 
+const CUSTOM_TOPIC_SVGS = {
+  overview: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 10 10h-8a2 2 0 0 1-2-2V2z"/><path d="M21.17 15.89A10 10 0 1 1 8.11 2.83"/><circle cx="12" cy="12" r="3"/></svg>`,
+  cards: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="3"/><line x1="2" y1="9" x2="22" y2="9"/><rect x="5.5" y="12.5" width="4" height="3" rx="0.8"/><line x1="13" y1="15" x2="18.5" y2="15"/></svg>`,
+  incomes: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="14" rx="2.5"/><circle cx="12" cy="13" r="3"/><path d="M12 2v4"/><path d="M9.5 3.5L12 1l2.5 2.5"/></svg>`,
+  pix: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L4 13.5h7.5L10.5 22 20 10.5h-7.5L13 2z"/><path d="M17 17l4 4"/><path d="M21 17v4h-4"/></svg>`,
+  debts: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15l2 2 4-4"/><line x1="9" y1="11" x2="13" y2="11"/></svg>`,
+  vault: `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="15" rx="3"/><circle cx="12" cy="12.5" r="3.5"/><line x1="9" y1="2.5" x2="15" y2="2.5"/><line x1="12" y1="10.5" x2="12" y2="14.5"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.31.06-.63.06-.94 0-.31-.02-.63-.06-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 0 0-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 0 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>`
+};
+
+const SECTION_META_MAP = {
+  'overview-view': { title: 'Ciclo do Dinheiro', iconClass: 'nav-icon-overview', svg: CUSTOM_TOPIC_SVGS.overview },
+  'cards-view': { title: 'Cartões', iconClass: 'nav-icon-cards', svg: CUSTOM_TOPIC_SVGS.cards },
+  'incomes-view': { title: 'Entradas', iconClass: 'nav-icon-incomes', svg: CUSTOM_TOPIC_SVGS.incomes },
+  'pix-view': { title: 'Saídas', iconClass: 'nav-icon-pix', svg: CUSTOM_TOPIC_SVGS.pix },
+  'debts-view': { title: 'Dívidas', iconClass: 'nav-icon-debts', svg: CUSTOM_TOPIC_SVGS.debts },
+  'vault-view': { title: 'Cofrinhos', iconClass: 'nav-icon-vault', svg: CUSTOM_TOPIC_SVGS.vault },
+  'settings-view': { title: 'Configurações', iconClass: 'nav-icon-overview', svg: CUSTOM_TOPIC_SVGS.settings }
+};
+
+let decisionModalResolver = null;
+let decisionModalTimer = null;
+
+function openDecisionModal({
+  title = 'Confirmar Decisão',
+  message = 'Tem certeza de que deseja continuar?',
+  confirmText = 'Confirmar',
+  cancelText = 'Cancelar',
+  variant = 'warning', // 'danger' | 'warning' | 'primary'
+  inputLabel = null,
+  inputDefault = ''
+} = {}) {
+  return new Promise((resolve) => {
+    const backdrop = document.getElementById('decision-confirm-backdrop');
+    const titleEl = document.getElementById('decision-modal-title');
+    const msgEl = document.getElementById('decision-modal-message');
+    const iconEl = document.getElementById('decision-modal-icon');
+    const confirmBtn = document.getElementById('decision-modal-confirm-btn');
+    const cancelBtn = document.getElementById('decision-modal-cancel-btn');
+    const inputGroup = document.getElementById('decision-modal-input-group');
+    const inputLabelEl = document.getElementById('decision-modal-input-label');
+    const inputEl = document.getElementById('decision-modal-input');
+
+    if (!backdrop || !confirmBtn || !cancelBtn) {
+      resolve({ confirmed: true, value: inputDefault });
+      return;
+    }
+
+    if (decisionModalTimer) {
+      clearTimeout(decisionModalTimer);
+      decisionModalTimer = null;
+    }
+
+    if (titleEl) titleEl.textContent = title;
+    if (msgEl) msgEl.textContent = message;
+    if (confirmBtn) {
+      confirmBtn.textContent = confirmText;
+      confirmBtn.className = `btn ${variant === 'danger' ? 'btn-danger' : 'btn-primary'}`;
+    }
+    if (cancelBtn) {
+      cancelBtn.textContent = cancelText;
+    }
+    if (iconEl) {
+      iconEl.className = `decision-modal-icon ${variant}`;
+      if (variant === 'danger') {
+        iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>`;
+      } else if (variant === 'primary') {
+        iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>`;
+      } else {
+        iconEl.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`;
+      }
+    }
+
+    if (inputGroup && inputEl) {
+      if (inputLabel) {
+        inputGroup.style.display = 'flex';
+        if (inputLabelEl) inputLabelEl.textContent = inputLabel;
+        inputEl.value = inputDefault != null ? String(inputDefault) : '';
+      } else {
+        inputGroup.style.display = 'none';
+        inputEl.value = '';
+      }
+    }
+
+    decisionModalResolver = (confirmed) => {
+      const val = inputEl ? inputEl.value : '';
+      decisionModalResolver = null;
+      backdrop.classList.add('closing');
+      backdrop.setAttribute('aria-hidden', 'true');
+      decisionModalTimer = setTimeout(() => {
+        backdrop.classList.remove('open', 'closing');
+        decisionModalTimer = null;
+      }, 220);
+      resolve({ confirmed, value: val });
+    };
+
+    backdrop.classList.remove('closing');
+    backdrop.classList.add('open');
+    backdrop.setAttribute('aria-hidden', 'false');
+
+    setTimeout(() => {
+      if (inputLabel && inputEl) {
+        inputEl.focus();
+        inputEl.select();
+      } else {
+        confirmBtn.focus();
+      }
+    }, 60);
+  });
+}
+
 // Renderiza os containers em "Exibir Saídas" em formato de carrossel (4 itens) por padrão,
 // com possibilidade de expandir todos os itens pelo botão
 function renderDueScheduleCards(summary) {
@@ -773,7 +884,7 @@ function renderDueScheduleCards(summary) {
       day: dueDay,
       dateText: `Vencimento: Dia ${String(dueDay).padStart(2, '0')}`,
       typeLabel: 'Fatura de Cartão',
-      icon: '&#128179;',
+      icon: CUSTOM_TOPIC_SVGS.cards,
       iconClass: 'cards',
       title: card.name,
       amount: invoiceAmount,
@@ -805,7 +916,7 @@ function renderDueScheduleCards(summary) {
       day: dueDay,
       dateText: `Vencimento: Dia ${String(dueDay).padStart(2, '0')}`,
       typeLabel: 'Dívida',
-      icon: '&#128196;',
+      icon: CUSTOM_TOPIC_SVGS.debts,
       iconClass: 'debt',
       title: d.creditor,
       amount: Number(d.monthlyInstallment || 0),
@@ -836,7 +947,7 @@ function renderDueScheduleCards(summary) {
       day: dueDay,
       dateText: `Data Limite: Dia ${String(dueDay).padStart(2, '0')}`,
       typeLabel: 'Caixinha / Cofrinhos',
-      icon: '&#128176;',
+      icon: CUSTOM_TOPIC_SVGS.vault,
       iconClass: 'income',
       title: g.name,
       amount: minMonthly > 0 ? minMonthly : depositedInMonth,
@@ -859,7 +970,7 @@ function renderDueScheduleCards(summary) {
       day,
       dateText: `Data: ${fmtDate}`,
       typeLabel: `Saída (${p.category || 'Gasto'})`,
-      icon: '&#9889;',
+      icon: CUSTOM_TOPIC_SVGS.pix,
       iconClass: 'pix',
       title: p.description,
       amount: Number(p.amount || 0),
@@ -880,7 +991,7 @@ function renderDueScheduleCards(summary) {
       day,
       dateText: `Data: ${fmtDate}`,
       typeLabel: `Cartão Débito (${card ? card.name : 'Cartão'})`,
-      icon: '&#128179;',
+      icon: CUSTOM_TOPIC_SVGS.cards,
       iconClass: 'pix',
       title: cd.description,
       amount: Number(cd.amount || 0),
@@ -939,7 +1050,7 @@ function renderDueScheduleCards(summary) {
       <div class="kpi-card schedule-empty-card" style="grid-column: 1 / -1">
         <div class="kpi-top">
           <span>Nenhuma saída registrada neste mês</span>
-          <div class="kpi-icon net">&#128197;</div>
+          <div class="kpi-icon net">${CUSTOM_TOPIC_SVGS.overview}</div>
         </div>
         <div class="kpi-sub">
           <span>Assim que você registrar cartões, dívidas, cofrinhos ou saídas, os itens aparecerão aqui.</span>
@@ -1019,13 +1130,13 @@ function renderOverview(summary) {
   const committedPct = totalIncome > 0 ? Math.round((totalExpenses / totalIncome) * 100) : 0;
   document.getElementById('kpi-net-sub').textContent = `${committedPct}% da renda comprometida`;
 
-  // Renderiza "Exibir Saídas" ordenado por data (limitado a 4 itens por padrão)
+  // Renderiza "Exibir Saídas" ordenado por data
   renderDueScheduleCards(summary);
 
   // Render Pie Chart
   renderPieSVG(summary);
 
-  // Render Side Summary Panel (Cards Limit + Debts + Pix Breakdown + Vault)
+  // Render Side Summary Panel (Caixas separadas com ícone personalizado referente a cada tópico)
   const totalCreditLimit = state.cards.reduce((acc, c) => acc + Number(c.limit || 0), 0);
   const availableCreditLimit = Math.max(0, totalCreditLimit - totalCards);
   const totalRemainingDebt = state.debts
@@ -1034,37 +1145,52 @@ function renderOverview(summary) {
 
   document.getElementById('overview-side-stats').innerHTML = `
     <div class="cycle-stat-box">
-      <div class="meta">
-        <span>Teto do Gráfico (Entradas do Mês)</span>
-        <strong style="color: var(--emerald)">${formatBRL(totalIncome)}</strong>
+      <div class="stat-box-left">
+        <div class="stat-box-icon nav-icon-incomes">${CUSTOM_TOPIC_SVGS.incomes}</div>
+        <div class="meta">
+          <span>Teto do Gráfico (Entradas do Mês)</span>
+          <strong style="color: var(--emerald)">${formatBRL(totalIncome)}</strong>
+        </div>
       </div>
       <button class="btn btn-secondary btn-sm" data-goto="incomes-view">Ver Entradas</button>
     </div>
     <div class="cycle-stat-box">
-      <div class="meta">
-        <span>Gastos Fora de Cartão (Saídas / Pix / Dinheiro)</span>
-        <strong style="color: var(--sky)">${formatBRL(totalPix)}</strong>
+      <div class="stat-box-left">
+        <div class="stat-box-icon nav-icon-pix">${CUSTOM_TOPIC_SVGS.pix}</div>
+        <div class="meta">
+          <span>Gastos Fora de Cartão (Saídas / Pix / Dinheiro)</span>
+          <strong style="color: var(--sky)">${formatBRL(totalPix)}</strong>
+        </div>
       </div>
       <button class="btn btn-secondary btn-sm" data-goto="pix-view">Ver Saídas</button>
     </div>
     <div class="cycle-stat-box">
-      <div class="meta">
-        <span>Faturas de Cartões (${state.cards.length} cartões)</span>
-        <strong style="color: var(--amber)">${formatBRL(totalCards)} <small style="font-size:0.75rem;color:var(--text-secondary)">/ Disp: ${formatBRL(availableCreditLimit)}</small></strong>
+      <div class="stat-box-left">
+        <div class="stat-box-icon nav-icon-cards">${CUSTOM_TOPIC_SVGS.cards}</div>
+        <div class="meta">
+          <span>Faturas de Cartões (${state.cards.length} cartões)</span>
+          <strong style="color: var(--amber)">${formatBRL(totalCards)} <small style="font-size:0.75rem;color:var(--text-secondary)">/ Disp: ${formatBRL(availableCreditLimit)}</small></strong>
+        </div>
       </div>
       <button class="btn btn-secondary btn-sm" data-goto="cards-view">Ver Cartões</button>
     </div>
     <div class="cycle-stat-box">
-      <div class="meta">
-        <span>Parcelas de Dívidas no Mês (Saldo Total: ${formatBRL(totalRemainingDebt)})</span>
-        <strong style="color: var(--coral)">${formatBRL(totalDebtMonth)}</strong>
+      <div class="stat-box-left">
+        <div class="stat-box-icon nav-icon-debts">${CUSTOM_TOPIC_SVGS.debts}</div>
+        <div class="meta">
+          <span>Parcelas de Dívidas no Mês (Saldo Total: ${formatBRL(totalRemainingDebt)})</span>
+          <strong style="color: var(--coral)">${formatBRL(totalDebtMonth)}</strong>
+        </div>
       </div>
       <button class="btn btn-secondary btn-sm" data-goto="debts-view">Ver Dívidas</button>
     </div>
     <div class="cycle-stat-box">
-      <div class="meta">
-        <span>Guardado nas Caixinhas neste Mês (Descontado do Bruto)</span>
-        <strong style="color: var(--teal)">${formatBRL(totalVaultMonth)}</strong>
+      <div class="stat-box-left">
+        <div class="stat-box-icon nav-icon-vault">${CUSTOM_TOPIC_SVGS.vault}</div>
+        <div class="meta">
+          <span>Guardado nas Caixinhas neste Mês (Descontado do Bruto)</span>
+          <strong style="color: var(--teal)">${formatBRL(totalVaultMonth)}</strong>
+        </div>
       </div>
       <button class="btn btn-secondary btn-sm" data-goto="vault-view">Ver Cofrinhos</button>
     </div>
@@ -1136,7 +1262,7 @@ function renderCardsView(summary) {
   }
 
   if (state.cards.length === 0) {
-    container.innerHTML = `<div class="panel empty-state">Nenhum cartão cadastrado ainda. Utilize o formulário abaixo para cadastrar seu primeiro cartão com limite e datas de fechamento/pagamento.</div>`;
+    container.innerHTML = `<div class="panel empty-state">Nenhum cartão cadastrado ainda. Utilize o botão "+ Novo Cartão" acima para cadastrar seu primeiro cartão com limite e datas de fechamento/pagamento.</div>`;
   } else {
     container.innerHTML = state.cards
       .map((card) => {
@@ -1208,14 +1334,26 @@ function renderCardsView(summary) {
       .join('');
   }
 
-  // Bind card actions
+  // Bind card actions with decision confirmation modal
   document.querySelectorAll('[data-toggle-invoice]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const cardId = btn.getAttribute('data-toggle-invoice');
       const card = state.cards.find((c) => c.id === cardId);
       if (!card) return;
       card.paidMonths = Array.isArray(card.paidMonths) ? card.paidMonths : [];
-      if (card.paidMonths.includes(selectedMonth)) {
+      const alreadyPaid = card.paidMonths.includes(selectedMonth);
+
+      const { confirmed } = await openDecisionModal({
+        title: alreadyPaid ? 'Reabrir Fatura do Cartão' : 'Confirmar Pagamento da Fatura',
+        message: alreadyPaid
+          ? `Deseja reabrir a fatura do cartão "${card.name}" em ${formatMonthLabel(selectedMonth)}?`
+          : `Confirmar que a fatura do cartão "${card.name}" referente a ${formatMonthLabel(selectedMonth)} foi paga?`,
+        confirmText: alreadyPaid ? 'Reabrir Fatura' : 'Confirmar Pagamento',
+        variant: alreadyPaid ? 'warning' : 'primary'
+      });
+      if (!confirmed) return;
+
+      if (alreadyPaid) {
         card.paidMonths = card.paidMonths.filter((m) => m !== selectedMonth);
       } else {
         card.paidMonths.push(selectedMonth);
@@ -1225,8 +1363,17 @@ function renderCardsView(summary) {
   });
 
   document.querySelectorAll('[data-delete-card]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const cardId = btn.getAttribute('data-delete-card');
+      const card = state.cards.find((c) => c.id === cardId);
+      if (!card) return;
+      const { confirmed } = await openDecisionModal({
+        title: 'Excluir Cartão',
+        message: `Tem certeza de que deseja excluir o cartão "${card.name}" e todos os lançamentos vinculados a ele?`,
+        confirmText: 'Sim, Excluir Cartão',
+        variant: 'danger'
+      });
+      if (!confirmed) return;
       state.cards = state.cards.filter((c) => c.id !== cardId);
       state.cardExpenses = state.cardExpenses.filter((ce) => ce.cardId !== cardId);
       persistAndRender();
@@ -1259,8 +1406,16 @@ function renderCardsView(summary) {
       .join('');
 
     document.querySelectorAll('[data-del-card-exp]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-del-card-exp');
+        const target = state.cardExpenses.find((e) => e.id === id);
+        const { confirmed } = await openDecisionModal({
+          title: 'Remover Gasto do Cartão',
+          message: `Deseja remover o gasto "${target ? target.description : 'selecionado'}" (${target ? formatBRL(target.amount) : ''})?`,
+          confirmText: 'Remover Gasto',
+          variant: 'danger'
+        });
+        if (!confirmed) return;
         state.cardExpenses = state.cardExpenses.filter((e) => e.id !== id);
         persistAndRender();
       });
@@ -1294,8 +1449,16 @@ function renderPixAndIncomesView(summary) {
       .join('');
 
     document.querySelectorAll('[data-del-pix]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-del-pix');
+        const target = state.pixExpenses.find((p) => p.id === id);
+        const { confirmed } = await openDecisionModal({
+          title: 'Remover Saída Registrada',
+          message: `Deseja remover o gasto "${target ? target.description : 'selecionado'}" no valor de ${target ? formatBRL(target.amount) : ''}?`,
+          confirmText: 'Remover Saída',
+          variant: 'danger'
+        });
+        if (!confirmed) return;
         state.pixExpenses = state.pixExpenses.filter((p) => p.id !== id);
         persistAndRender();
       });
@@ -1359,8 +1522,16 @@ function renderPixAndIncomesView(summary) {
       .join('');
 
     document.querySelectorAll('[data-del-inc]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-del-inc');
+        const target = state.incomes.find((i) => i.id === id);
+        const { confirmed } = await openDecisionModal({
+          title: 'Remover Entrada',
+          message: `Deseja remover a entrada "${target ? target.description : 'selecionada'}" (${target ? formatBRL(target.amount) : ''})?`,
+          confirmText: 'Remover Entrada',
+          variant: 'danger'
+        });
+        if (!confirmed) return;
         state.incomes = state.incomes.filter((i) => i.id !== id);
         persistAndRender();
       });
@@ -1368,18 +1539,22 @@ function renderPixAndIncomesView(summary) {
 
     const findRec = (id) => (state.recurringIncomes || []).find((r) => r.id === id);
 
-    // Ajusta o valor apenas do mês selecionado — a recorrência continua normalmente
+    // Ajusta o valor apenas do mês selecionado com Modal de Confirmação
     document.querySelectorAll('[data-rec-adjust]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const rec = findRec(btn.getAttribute('data-rec-adjust'));
         if (!rec) return;
         const current = rec.overrides && rec.overrides[selectedMonth] != null ? rec.overrides[selectedMonth] : rec.amount;
-        const input = prompt(
-          `Valor recebido em ${formatMonthLabel(selectedMonth)} (padrão: ${formatBRL(rec.amount)}).\nOs próximos meses continuam com o valor padrão.`,
-          String(current)
-        );
-        if (input === null) return;
-        const val = parseFloat(String(input).replace(/\./g, '').replace(',', '.'));
+        const { confirmed, value } = await openDecisionModal({
+          title: `Ajustar Valor em ${formatMonthLabel(selectedMonth)}`,
+          message: `Informe o valor recebido para "${rec.description}" neste mês (valor padrão: ${formatBRL(rec.amount)}). Os próximos meses continuarão com o valor padrão.`,
+          confirmText: 'Salvar Ajuste',
+          variant: 'primary',
+          inputLabel: 'Valor neste mês (R$)',
+          inputDefault: String(current)
+        });
+        if (!confirmed) return;
+        const val = parseFloat(String(value).replace(/\./g, '').replace(',', '.'));
         if (isNaN(val) || val < 0) return;
         rec.overrides = rec.overrides || {};
         rec.overrides[selectedMonth] = val;
@@ -1388,32 +1563,52 @@ function renderPixAndIncomesView(summary) {
       });
     });
 
-    // Zera apenas este mês (ex: férias) — continua auto-registrando nos próximos
+    // Zera apenas este mês com Modal de Confirmação
     document.querySelectorAll('[data-rec-skip]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const rec = findRec(btn.getAttribute('data-rec-skip'));
         if (!rec) return;
+        const { confirmed } = await openDecisionModal({
+          title: 'Zerar Salário Neste Mês',
+          message: `Deseja zerar "${rec.description}" apenas em ${formatMonthLabel(selectedMonth)}? Nos meses seguintes ele continuará sendo registrado automaticamente.`,
+          confirmText: 'Zerar Neste Mês',
+          variant: 'warning'
+        });
+        if (!confirmed) return;
         rec.skippedMonths = Array.from(new Set([...(rec.skippedMonths || []), selectedMonth]));
         persistAndRender();
       });
     });
 
     document.querySelectorAll('[data-rec-restore]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const rec = findRec(btn.getAttribute('data-rec-restore'));
         if (!rec) return;
+        const { confirmed } = await openDecisionModal({
+          title: 'Restaurar Valor Padrão',
+          message: `Deseja restaurar "${rec.description}" para o valor padrão (${formatBRL(rec.amount)}) em ${formatMonthLabel(selectedMonth)}?`,
+          confirmText: 'Restaurar',
+          variant: 'primary'
+        });
+        if (!confirmed) return;
         rec.skippedMonths = (rec.skippedMonths || []).filter((m) => m !== selectedMonth);
         if (rec.overrides) delete rec.overrides[selectedMonth];
         persistAndRender();
       });
     });
 
-    // Encerra: mantém histórico dos meses anteriores, para de registrar a partir deste mês
+    // Encerra com Modal de Confirmação
     document.querySelectorAll('[data-rec-end]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const rec = findRec(btn.getAttribute('data-rec-end'));
         if (!rec) return;
-        if (!confirm(`Encerrar "${rec.description}" a partir de ${formatMonthLabel(selectedMonth)}? Os meses anteriores ficam no histórico.`)) return;
+        const { confirmed } = await openDecisionModal({
+          title: 'Encerrar Salário Recorrente',
+          message: `Encerrar "${rec.description}" a partir de ${formatMonthLabel(selectedMonth)}? Os meses anteriores permanecem salvos no histórico.`,
+          confirmText: 'Encerrar Recorrência',
+          variant: 'danger'
+        });
+        if (!confirmed) return;
         if (!rec.startMonth || selectedMonth <= rec.startMonth) {
           state.recurringIncomes = state.recurringIncomes.filter((r) => r.id !== rec.id);
         } else {
@@ -1486,14 +1681,27 @@ function renderDebtsView() {
     .join('');
 
   document.querySelectorAll('[data-toggle-debt-month]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-toggle-debt-month');
       const debt = state.debts.find((d) => d.id === id);
       if (!debt) return;
       debt.paidMonths = Array.isArray(debt.paidMonths) ? debt.paidMonths : [];
-      if (debt.paidMonths.includes(selectedMonth)) {
+      const alreadyPaid = debt.paidMonths.includes(selectedMonth);
+
+      const { confirmed } = await openDecisionModal({
+        title: alreadyPaid ? 'Desmarcar Parcela do Mês' : 'Confirmar Pagamento da Parcela',
+        message: alreadyPaid
+          ? `Deseja desmarcar o pagamento da parcela de "${debt.creditor}" (${formatBRL(debt.monthlyInstallment)}) em ${formatMonthLabel(selectedMonth)}?`
+          : `Confirmar pagamento da parcela de "${debt.creditor}" (${formatBRL(debt.monthlyInstallment)}) em ${formatMonthLabel(selectedMonth)}?`,
+        confirmText: alreadyPaid ? 'Desmarcar' : 'Confirmar Pagamento',
+        variant: alreadyPaid ? 'warning' : 'primary'
+      });
+      if (!confirmed) return;
+
+      if (alreadyPaid) {
         debt.paidMonths = debt.paidMonths.filter((m) => m !== selectedMonth);
         debt.paidAmount = Math.max(0, Number(debt.paidAmount || 0) - Number(debt.monthlyInstallment || 0));
+        debt.status = 'Ativa';
       } else {
         debt.paidMonths.push(selectedMonth);
         debt.paidAmount = Math.min(Number(debt.totalAmount), Number(debt.paidAmount || 0) + Number(debt.monthlyInstallment || 0));
@@ -1506,11 +1714,18 @@ function renderDebtsView() {
   });
 
   document.querySelectorAll('[data-pay-debt]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-pay-debt');
       const debt = state.debts.find((d) => d.id === id);
       if (!debt) return;
       const step = Number(debt.monthlyInstallment || 0) || Number(debt.totalAmount || 0);
+      const { confirmed } = await openDecisionModal({
+        title: 'Abater Saldo da Dívida',
+        message: `Deseja abater ${formatBRL(step)} do saldo devedor de "${debt.creditor}"?`,
+        confirmText: 'Abater Saldo',
+        variant: 'primary'
+      });
+      if (!confirmed) return;
       debt.paidAmount = Math.min(Number(debt.totalAmount), Number(debt.paidAmount || 0) + step);
       if (debt.paidAmount >= debt.totalAmount) {
         debt.status = 'Quitada';
@@ -1520,8 +1735,16 @@ function renderDebtsView() {
   });
 
   document.querySelectorAll('[data-del-debt]').forEach((btn) => {
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', async () => {
       const id = btn.getAttribute('data-del-debt');
+      const debt = state.debts.find((d) => d.id === id);
+      const { confirmed } = await openDecisionModal({
+        title: 'Excluir Dívida',
+        message: `Tem certeza de que deseja excluir a dívida "${debt ? debt.creditor : 'selecionada'}"?`,
+        confirmText: 'Sim, Excluir',
+        variant: 'danger'
+      });
+      if (!confirmed) return;
       state.debts = state.debts.filter((d) => d.id !== id);
       persistAndRender();
     });
@@ -1530,6 +1753,7 @@ function renderDebtsView() {
 
 let lastActiveTabBeforeSettings = 'overview-view';
 let drawerCloseTimer = null;
+let sectionTransitionTimer = null;
 
 function openFormDrawer(drawerId) {
   const backdrop = document.getElementById('form-drawer-backdrop');
@@ -1558,20 +1782,68 @@ function closeFormDrawer() {
   }, 310);
 }
 
-// Navigation Tab Switcher
+function collapseMobileNavMenu() {
+  const collapsible = document.getElementById('sidebar-nav-collapsible');
+  const toggleBtn = document.getElementById('mobile-nav-collapse-btn');
+  if (collapsible) collapsible.classList.remove('open');
+  if (toggleBtn) toggleBtn.setAttribute('aria-expanded', 'false');
+}
+
+// Navigation Tab Switcher (Com Fade Out da seção atual + Fade In da nova seção + Fechamento automático do menu mobile)
 function switchTab(targetId) {
-  if (targetId && targetId !== 'settings-view') {
+  if (!targetId) return;
+  if (targetId !== 'settings-view') {
     lastActiveTabBeforeSettings = targetId;
   }
-  document.querySelectorAll('.view-section').forEach((sec) => {
-    sec.classList.toggle('active', sec.id === targetId);
-  });
+
   document.querySelectorAll('.nav-btn').forEach((btn) => {
     btn.classList.toggle('active', btn.getAttribute('data-target') === targetId);
   });
   const gearBtn = document.getElementById('open-settings-btn');
   if (gearBtn) {
     gearBtn.classList.toggle('active', targetId === 'settings-view');
+  }
+
+  // Atualiza cabeçalho do menu colapsável mobile com o ícone e nome personalizados da seção
+  const meta = SECTION_META_MAP[targetId] || SECTION_META_MAP['overview-view'];
+  const activeTitleEl = document.getElementById('mobile-nav-active-title');
+  const activeIconEl = document.getElementById('mobile-nav-active-icon');
+  if (activeTitleEl) activeTitleEl.textContent = meta.title;
+  if (activeIconEl) {
+    activeIconEl.className = `nav-custom-icon ${meta.iconClass}`;
+    activeIconEl.innerHTML = meta.svg;
+  }
+
+  collapseMobileNavMenu();
+
+  const currentSec = document.querySelector('.view-section.active');
+  const targetSec = document.getElementById(targetId);
+  if (!targetSec) return;
+
+  if (currentSec === targetSec) {
+    return;
+  }
+
+  if (sectionTransitionTimer) {
+    clearTimeout(sectionTransitionTimer);
+    sectionTransitionTimer = null;
+  }
+
+  if (currentSec) {
+    currentSec.classList.remove('section-fading-in');
+    currentSec.classList.add('section-fading-out');
+    sectionTransitionTimer = setTimeout(() => {
+      document.querySelectorAll('.view-section').forEach((sec) => {
+        sec.classList.remove('active', 'section-fading-out', 'section-fading-in');
+      });
+      targetSec.classList.add('active', 'section-fading-in');
+      sectionTransitionTimer = setTimeout(() => {
+        targetSec.classList.remove('section-fading-in');
+        sectionTransitionTimer = null;
+      }, 250);
+    }, 170);
+  } else {
+    targetSec.classList.add('active', 'section-fading-in');
   }
 }
 
@@ -1633,7 +1905,7 @@ function renderVaultView(summary) {
 
   // Preenche select do formulário de movimentação
   if (goals.length === 0) {
-    selectGoal.innerHTML = `<option value="">Crie uma caixinha ao lado primeiro</option>`;
+    selectGoal.innerHTML = `<option value="">Crie uma caixinha primeiro</option>`;
   } else {
     selectGoal.innerHTML = goals
       .map((g) => `<option value="${g.id}">${g.name} (Mín. ${formatBRL(g.minMonthly || 0)}/mês)</option>`)
@@ -1642,7 +1914,7 @@ function renderVaultView(summary) {
 
   // Tabela de Caixinhas (Controle Mês a Mês)
   if (goals.length === 0) {
-    goalsTbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma caixinha criada ainda. Utilize o formulário "Criar Caixinha" acima para começar.</td></tr>`;
+    goalsTbody.innerHTML = `<tr><td colspan="7" class="empty-state">Nenhuma caixinha criada ainda. Utilize o botão "+ Criar Caixinha" acima para começar.</td></tr>`;
   } else {
     goalsTbody.innerHTML = goals
       .map((g) => {
@@ -1666,7 +1938,7 @@ function renderVaultView(summary) {
         return `
           <tr class="${dueStatus.isNearOrOverdue ? 'row-due-danger' : ''}">
             <td>
-              <strong>${dueStatus.isNearOrOverdue ? '<span class="due-exclamation-badge" title="Atraso ou próximo da data limite!" style="width:18px;height:18px;font-size:0.72rem;margin-right:6px">!</span>' : ''}&#128176; ${g.name}</strong>
+              <strong>${dueStatus.isNearOrOverdue ? '<span class="due-exclamation-badge" title="Atraso ou próximo da data limite!" style="width:18px;height:18px;font-size:0.72rem;margin-right:6px">!</span>' : ''}${g.name}</strong>
               <div style="font-size: 0.76rem; color: var(--text-secondary)">${g.description || 'Reserva financeira'}${target > 0 ? ` • Meta Total: ${formatBRL(target)}` : ''}</div>
             </td>
             <td style="font-family: var(--font-mono); font-weight: 600">${formatBRL(minMonthly)}/mês</td>
@@ -1691,19 +1963,23 @@ function renderVaultView(summary) {
       })
       .join('');
 
-    // Botão rápido de confirmar depósito mensal na caixinha (desconta do bruto somente após confirmação)
+    // Botão rápido de confirmar depósito mensal na caixinha via Modal de Confirmação
     document.querySelectorAll('[data-quick-deposit]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-quick-deposit');
         const goal = goals.find((g) => g.id === id);
         if (!goal) return;
         const suggested = Number(goal.minMonthly || 0) || 100;
-        const input = prompt(
-          `Quanto você guardou na caixinha "${goal.name}" em ${formatMonthLabel(selectedMonth)}?\n(Mínimo mensal: ${formatBRL(goal.minMonthly || 0)})\n\nAo confirmar, esse valor será descontado do valor bruto do mês e somado à sua caixinha:`,
-          String(suggested)
-        );
-        if (input === null) return;
-        const val = parseFloat(String(input).replace(/\./g, '').replace(',', '.'));
+        const { confirmed, value } = await openDecisionModal({
+          title: `Confirmar Depósito — ${goal.name}`,
+          message: `Informe quanto você guardou na caixinha "${goal.name}" em ${formatMonthLabel(selectedMonth)} (mínimo mensal: ${formatBRL(goal.minMonthly || 0)}).\nAo confirmar, o valor será descontado do bruto do mês e somado à caixinha.`,
+          confirmText: 'Confirmar Depósito',
+          variant: 'primary',
+          inputLabel: 'Valor depositado (R$)',
+          inputDefault: String(suggested)
+        });
+        if (!confirmed) return;
+        const val = parseFloat(String(value).replace(/\./g, '').replace(',', '.'));
         if (isNaN(val) || val <= 0) return;
 
         state.vaultMovements = Array.isArray(state.vaultMovements) ? state.vaultMovements : [];
@@ -1721,8 +1997,16 @@ function renderVaultView(summary) {
     });
 
     document.querySelectorAll('[data-del-vault-goal]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-del-vault-goal');
+        const goal = goals.find((g) => g.id === id);
+        const { confirmed } = await openDecisionModal({
+          title: 'Excluir Caixinha',
+          message: `Tem certeza de que deseja excluir a caixinha "${goal ? goal.name : 'selecionada'}" e todo o histórico vinculado a ela?`,
+          confirmText: 'Sim, Excluir',
+          variant: 'danger'
+        });
+        if (!confirmed) return;
         state.vaultGoals = state.vaultGoals.filter((g) => g.id !== id);
         state.vaultMovements = state.vaultMovements.filter((m) => m.goalId !== id);
         persistAndRender();
@@ -1754,8 +2038,16 @@ function renderVaultView(summary) {
       .join('');
 
     document.querySelectorAll('[data-del-vmove]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const id = btn.getAttribute('data-del-vmove');
+        const target = state.vaultMovements.find((m) => m.id === id);
+        const { confirmed } = await openDecisionModal({
+          title: 'Remover Movimentação da Caixinha',
+          message: `Deseja remover "${target ? target.description : 'esta movimentação'}" (${target ? formatBRL(target.amount) : ''})?`,
+          confirmText: 'Remover',
+          variant: 'danger'
+        });
+        if (!confirmed) return;
         state.vaultMovements = state.vaultMovements.filter((m) => m.id !== id);
         persistAndRender();
       });
@@ -1878,12 +2170,26 @@ function renderExpenseCategoriesDropdownAndManager() {
     });
 
     listEl.querySelectorAll('[data-del-exp-cat]').forEach((btn) => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const catId = btn.getAttribute('data-del-exp-cat');
         if (categories.length <= 1) {
-          alert('Mantenha pelo menos 1 categoria cadastrada.');
+          await openDecisionModal({
+            title: 'Ação Não Permitida',
+            message: 'Mantenha pelo menos 1 categoria de gasto cadastrada.',
+            confirmText: 'Entendi',
+            cancelText: 'Fechar',
+            variant: 'warning'
+          });
           return;
         }
+        const target = categories.find((c) => c.id === catId);
+        const { confirmed } = await openDecisionModal({
+          title: 'Remover Categoria de Gasto',
+          message: `Deseja remover a categoria "${target ? formatCategoryOptionLabel(target) : 'selecionada'}"?`,
+          confirmText: 'Remover Categoria',
+          variant: 'danger'
+        });
+        if (!confirmed) return;
         state.expenseCategories = categories.filter((c) => c.id !== catId);
         if (editingCategoryId === catId) {
           resetCategoryFormState();
@@ -1931,6 +2237,51 @@ function updateFirebaseStatusBadge() {
 
 // Setup Event Listeners
 function initApp() {
+  // Menu de seleção de seções colapsável (Mobile & Tablet)
+  const mobileNavCollapseBtn = document.getElementById('mobile-nav-collapse-btn');
+  const sidebarNavCollapsible = document.getElementById('sidebar-nav-collapsible');
+  if (mobileNavCollapseBtn && sidebarNavCollapsible) {
+    mobileNavCollapseBtn.addEventListener('click', () => {
+      const isOpen = sidebarNavCollapsible.classList.toggle('open');
+      mobileNavCollapseBtn.setAttribute('aria-expanded', String(isOpen));
+    });
+  }
+
+  // Modal Global de Confirmação nas Decisões
+  const decisionBackdrop = document.getElementById('decision-confirm-backdrop');
+  const decisionConfirmBtn = document.getElementById('decision-modal-confirm-btn');
+  const decisionCancelBtn = document.getElementById('decision-modal-cancel-btn');
+  const decisionInput = document.getElementById('decision-modal-input');
+
+  if (decisionConfirmBtn) {
+    decisionConfirmBtn.addEventListener('click', () => {
+      if (decisionModalResolver) decisionModalResolver(true);
+    });
+  }
+
+  if (decisionCancelBtn) {
+    decisionCancelBtn.addEventListener('click', () => {
+      if (decisionModalResolver) decisionModalResolver(false);
+    });
+  }
+
+  if (decisionBackdrop) {
+    decisionBackdrop.addEventListener('click', (e) => {
+      if (e.target === decisionBackdrop && decisionModalResolver) {
+        decisionModalResolver(false);
+      }
+    });
+  }
+
+  if (decisionInput) {
+    decisionInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (decisionModalResolver) decisionModalResolver(true);
+      }
+    });
+  }
+
   const toggleScheduleAllBtn = document.getElementById('toggle-schedule-all-btn');
   if (toggleScheduleAllBtn) {
     toggleScheduleAllBtn.addEventListener('click', () => {
@@ -2188,8 +2539,15 @@ function initApp() {
     });
   });
 
-  // Botão Sair da Conta
+  // Botão Sair da Conta com Modal de Confirmação
   document.getElementById('user-logout-btn').addEventListener('click', async () => {
+    const { confirmed } = await openDecisionModal({
+      title: 'Sair da Conta',
+      message: 'Deseja encerrar sua sessão atual e sair da conta?',
+      confirmText: 'Sim, Sair',
+      variant: 'warning'
+    });
+    if (!confirmed) return;
     if (activeUser) {
       sessionStorage.removeItem(`${SESSION_VERIFIED_PREFIX}${activeUser.uid}`);
     }
@@ -2200,11 +2558,35 @@ function initApp() {
   const openSettingsBtn = document.getElementById('open-settings-btn');
   const settingsForm = document.getElementById('form-user-settings');
   const settingsFeedback = document.getElementById('settings-feedback');
+  let settingsSubviewTimer = null;
 
   const openSettingsSubview = (subviewId) => {
-    document.querySelectorAll('#settings-view .settings-subview').forEach((sub) => {
-      sub.classList.toggle('active', sub.id === subviewId);
-    });
+    const currentSub = document.querySelector('#settings-view .settings-subview.active');
+    const targetSub = document.getElementById(subviewId);
+    if (!targetSub) return;
+    if (currentSub === targetSub) return;
+
+    if (settingsSubviewTimer) {
+      clearTimeout(settingsSubviewTimer);
+      settingsSubviewTimer = null;
+    }
+
+    if (currentSub) {
+      currentSub.classList.remove('subview-fading-in');
+      currentSub.classList.add('subview-fading-out');
+      settingsSubviewTimer = setTimeout(() => {
+        document.querySelectorAll('#settings-view .settings-subview').forEach((sub) => {
+          sub.classList.remove('active', 'subview-fading-out', 'subview-fading-in');
+        });
+        targetSub.classList.add('active', 'subview-fading-in');
+        settingsSubviewTimer = setTimeout(() => {
+          targetSub.classList.remove('subview-fading-in');
+          settingsSubviewTimer = null;
+        }, 240);
+      }, 160);
+    } else {
+      targetSub.classList.add('active', 'subview-fading-in');
+    }
   };
 
   const populateSettingsData = () => {
@@ -2283,6 +2665,10 @@ function initApp() {
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      if (decisionModalResolver) {
+        decisionModalResolver(false);
+        return;
+      }
       closeFormDrawer();
     }
   });
@@ -2335,8 +2721,14 @@ function initApp() {
 
   const resetAllBtn = document.getElementById('reset-all-data-btn');
   if (resetAllBtn) {
-    resetAllBtn.addEventListener('click', () => {
-      if (!confirm('Tem certeza que deseja zerar todos os dados financeiros desta conta?')) return;
+    resetAllBtn.addEventListener('click', async () => {
+      const { confirmed } = await openDecisionModal({
+        title: 'Zerar Todos os Dados da Conta',
+        message: 'Tem certeza de que deseja apagar todos os lançamentos financeiros (entradas, saídas, cartões, dívidas e cofrinhos) desta conta? Esta ação não pode ser desfeita.',
+        confirmText: 'Sim, Zerar Tudo',
+        variant: 'danger'
+      });
+      if (!confirmed) return;
       const currentFonts = { ...DEFAULT_FONT_SETTINGS, ...(state.fontSettings || {}) };
       const currentColors = { ...DEFAULT_COLOR_SETTINGS, ...(state.colorSettings || {}) };
       state = getInitialSeedData();
@@ -2370,7 +2762,14 @@ function initApp() {
 
   const resetFontsBtn = document.getElementById('reset-fonts-btn');
   if (resetFontsBtn) {
-    resetFontsBtn.addEventListener('click', () => {
+    resetFontsBtn.addEventListener('click', async () => {
+      const { confirmed } = await openDecisionModal({
+        title: 'Restaurar Tamanho das Fontes',
+        message: 'Deseja restaurar o tamanho de todas as fontes de texto para o padrão original?',
+        confirmText: 'Restaurar Padrão',
+        variant: 'warning'
+      });
+      if (!confirmed) return;
       state.fontSettings = { ...DEFAULT_FONT_SETTINGS };
       applyFontSettings(state.fontSettings);
       persistAndRender();
@@ -2407,7 +2806,14 @@ function initApp() {
 
   const resetColorsBtn = document.getElementById('reset-colors-btn');
   if (resetColorsBtn) {
-    resetColorsBtn.addEventListener('click', () => {
+    resetColorsBtn.addEventListener('click', async () => {
+      const { confirmed } = await openDecisionModal({
+        title: 'Restaurar Paleta de Cores',
+        message: 'Deseja restaurar todas as cores do aplicativo para o tema Esmeralda Dark padrão?',
+        confirmText: 'Restaurar Cores',
+        variant: 'warning'
+      });
+      if (!confirmed) return;
       state.colorSettings = { ...DEFAULT_COLOR_SETTINGS };
       applyColorSettings(state.colorSettings);
       persistAndRender();
