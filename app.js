@@ -1109,6 +1109,68 @@ function renderDueScheduleCards(summary) {
   }
 }
 
+let cycleBoxTransitionTimer = null;
+
+// Alterna as "caixas" de Ciclo do Dinheiro: são clicáveis e só a caixa selecionada abre (com fade in / fade out)
+function toggleCycleBox(boxId) {
+  const targetBox = document.getElementById(boxId);
+  if (!targetBox) return;
+
+  const isAlreadyOpen = targetBox.classList.contains('open');
+  const currentOpenBox = document.querySelector('#overview-view .overview-topic-box.open');
+
+  if (cycleBoxTransitionTimer) {
+    clearTimeout(cycleBoxTransitionTimer);
+    cycleBoxTransitionTimer = null;
+  }
+
+  const closeBoxWithFade = (boxEl, onDone) => {
+    const body = boxEl.querySelector('.topic-box-body');
+    const trigger = boxEl.querySelector('.topic-box-trigger');
+    if (trigger) trigger.setAttribute('aria-expanded', 'false');
+    if (body) {
+      body.classList.remove('box-fading-in');
+      body.classList.add('box-fading-out');
+      cycleBoxTransitionTimer = setTimeout(() => {
+        body.classList.remove('box-fading-out');
+        boxEl.classList.remove('open');
+        if (onDone) onDone();
+      }, 170);
+    } else {
+      boxEl.classList.remove('open');
+      if (onDone) onDone();
+    }
+  };
+
+  const openBoxWithFade = (boxEl) => {
+    const body = boxEl.querySelector('.topic-box-body');
+    const trigger = boxEl.querySelector('.topic-box-trigger');
+    boxEl.classList.add('open');
+    if (trigger) trigger.setAttribute('aria-expanded', 'true');
+    if (body) {
+      body.classList.remove('box-fading-out');
+      body.classList.add('box-fading-in');
+      cycleBoxTransitionTimer = setTimeout(() => {
+        body.classList.remove('box-fading-in');
+        cycleBoxTransitionTimer = null;
+      }, 240);
+    }
+  };
+
+  if (isAlreadyOpen) {
+    closeBoxWithFade(targetBox);
+    return;
+  }
+
+  if (currentOpenBox && currentOpenBox !== targetBox) {
+    closeBoxWithFade(currentOpenBox, () => {
+      openBoxWithFade(targetBox);
+    });
+  } else {
+    openBoxWithFade(targetBox);
+  }
+}
+
 // Render Overview & Recent Transactions
 function renderOverview(summary) {
   const { totalIncome, totalPix, totalCards, totalDebtMonth, totalVaultMonth, totalExpenses, freeBalance } = summary;
@@ -1129,6 +1191,17 @@ function renderOverview(summary) {
   netEl.style.color = freeBalance >= 0 ? 'var(--emerald)' : 'var(--coral)';
   const committedPct = totalIncome > 0 ? Math.round((totalExpenses / totalIncome) * 100) : 0;
   document.getElementById('kpi-net-sub').textContent = `${committedPct}% da renda comprometida`;
+
+  const badgeKpis = document.getElementById('box-badge-kpis');
+  if (badgeKpis) {
+    badgeKpis.textContent = `Livre: ${formatBRL(freeBalance)}`;
+    badgeKpis.style.color = freeBalance >= 0 ? 'var(--emerald)' : 'var(--coral)';
+  }
+
+  const badgePie = document.getElementById('box-badge-pie');
+  if (badgePie) {
+    badgePie.textContent = `${committedPct}% comprometido`;
+  }
 
   // Renderiza "Exibir Saídas" ordenado por data
   renderDueScheduleCards(summary);
@@ -1226,6 +1299,11 @@ function renderOverview(summary) {
       };
     })
   ].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+
+  const badgeMovements = document.getElementById('box-badge-movements');
+  if (badgeMovements) {
+    badgeMovements.textContent = `${movements.length} lançamento(s)`;
+  }
 
   const tbody = document.getElementById('recent-movements-tbody');
   if (movements.length === 0) {
@@ -2237,6 +2315,21 @@ function updateFirebaseStatusBadge() {
 
 // Setup Event Listeners
 function initApp() {
+  // Caixas clicáveis em Ciclo do Dinheiro (só a caixa selecionada abre)
+  document.querySelectorAll('[data-toggle-cycle-box]').forEach((trigger) => {
+    trigger.addEventListener('click', () => {
+      const boxId = trigger.getAttribute('data-toggle-cycle-box');
+      if (boxId) toggleCycleBox(boxId);
+    });
+    trigger.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const boxId = trigger.getAttribute('data-toggle-cycle-box');
+        if (boxId) toggleCycleBox(boxId);
+      }
+    });
+  });
+
   // Menu de seleção de seções colapsável (Mobile & Tablet)
   const mobileNavCollapseBtn = document.getElementById('mobile-nav-collapse-btn');
   const sidebarNavCollapsible = document.getElementById('sidebar-nav-collapsible');

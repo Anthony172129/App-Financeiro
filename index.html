@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="./styles.css?v=20261119a" />
+  <link rel="stylesheet" href="./styles.css?v=20261119b" />
 </head>
 <body>
   <div class="app-shell">
@@ -169,126 +169,147 @@
         </div>
       </header>
 
-      <!-- 1. TELA INICIAL: CICLO DO DINHEIRO (SEPARADO EM CAIXAS COM ÍCONE PERSONALIZADO PARA CADA TEMA) -->
+      <!-- 1. TELA INICIAL: CICLO DO DINHEIRO (CAIXAS CLICÁVEIS — SÓ ABRE A CAIXA SELECIONADA) -->
       <section id="overview-view" class="view-section active">
-        <!-- CAIXA 1: Resumo & Indicadores do Ciclo Mensal -->
-        <div class="panel overview-topic-box">
-          <div class="panel-header topic-box-header">
-            <div class="topic-box-heading">
-              <div class="topic-box-icon income">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-                </svg>
+        <div class="cycle-boxes-grid">
+          <!-- CAIXA 1: Resumo & Indicadores do Ciclo Mensal -->
+          <div id="cycle-box-kpis" class="panel overview-topic-box" data-cycle-box="cycle-box-kpis">
+            <div class="topic-box-header topic-box-trigger" data-toggle-cycle-box="cycle-box-kpis" role="button" tabindex="0" aria-expanded="false">
+              <div class="topic-box-heading">
+                <div class="topic-box-icon income">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                  </svg>
+                </div>
+                <div class="panel-title">
+                  <h3>Resumo de Indicadores do Mês</h3>
+                  <p>Balanço entre entradas, saídas diretas, faturas de cartões e saldo livre.</p>
+                </div>
               </div>
-              <div class="panel-title">
-                <h3>Resumo de Indicadores do Mês</h3>
-                <p>Balanço imediato entre entradas, saídas diretas, faturas de cartões e saldo livre.</p>
+              <div class="topic-box-right">
+                <span id="box-badge-kpis" class="nav-badge">Livre: R$ 0,00</span>
+                <span class="topic-box-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <div class="topic-box-body">
+              <div class="kpi-grid" style="margin-bottom: 0" aria-label="Indicadores Principais do Mês">
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <span>Lucro / Entradas (Teto)</span>
+                    <div class="kpi-icon income">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
+                        <polyline points="17 6 23 6 23 12" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div id="kpi-income" class="kpi-value">R$ 0,00</div>
+                  <div class="kpi-sub">
+                    <span id="kpi-income-sub">0 entradas no mês</span>
+                  </div>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <span>Gastos Fora de Cartão (Saídas)</span>
+                    <div class="kpi-icon pix">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div id="kpi-pix" class="kpi-value">R$ 0,00</div>
+                  <div class="kpi-sub">
+                    <span id="kpi-pix-sub">0% das entradas</span>
+                  </div>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <span>Faturas de Cartões</span>
+                    <div class="kpi-icon cards">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="5" width="20" height="14" rx="2" />
+                        <line x1="2" y1="10" x2="22" y2="10" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div id="kpi-cards" class="kpi-value">R$ 0,00</div>
+                  <div class="kpi-sub">
+                    <span id="kpi-cards-sub">0% das entradas</span>
+                  </div>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-top">
+                    <span>Saldo Livre (Sobra Real)</span>
+                    <div class="kpi-icon net">
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                        <path d="M9 12l2 2 4-4" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div id="kpi-net" class="kpi-value">R$ 0,00</div>
+                  <div class="kpi-sub">
+                    <span id="kpi-net-sub">0% da renda comprometida</span>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div class="kpi-grid" style="margin-bottom: 0" aria-label="Indicadores Principais do Mês">
-            <div class="kpi-card">
-              <div class="kpi-top">
-                <span>Lucro / Entradas (Teto)</span>
-                <div class="kpi-icon income">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="23 6 13.5 15.5 8.5 10.5 1 18" />
-                    <polyline points="17 6 23 6 23 12" />
+          <!-- CAIXA 2: Exibir Saídas (Carrossel de até 4 itens simultâneos com botão para expandir todos) -->
+          <div id="cycle-box-schedule" class="panel overview-topic-box schedule-section" data-cycle-box="cycle-box-schedule">
+            <div class="topic-box-header topic-box-trigger" data-toggle-cycle-box="cycle-box-schedule" role="button" tabindex="0" aria-expanded="false">
+              <div class="topic-box-heading">
+                <div class="topic-box-icon cards">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                    <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
                   </svg>
                 </div>
+                <div class="panel-title">
+                  <h3>Exibir Saídas</h3>
+                  <p>Carrossel de faturas, dívidas, cofrinhos e saídas por ordem de data.</p>
+                </div>
               </div>
-              <div id="kpi-income" class="kpi-value">R$ 0,00</div>
-              <div class="kpi-sub">
-                <span id="kpi-income-sub">0 entradas no mês</span>
+              <div class="topic-box-right">
+                <span id="schedule-count-badge" class="nav-badge">0 itens no mês</span>
+                <span class="topic-box-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
               </div>
             </div>
 
-            <div class="kpi-card">
-              <div class="kpi-top">
-                <span>Gastos Fora de Cartão (Saídas)</span>
-                <div class="kpi-icon pix">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
-                  </svg>
+            <div class="topic-box-body">
+              <div class="schedule-header-actions" style="justify-content: flex-end; margin-bottom: 12px">
+                <div id="schedule-carousel-nav" class="schedule-carousel-nav">
+                  <button id="schedule-carousel-prev" type="button" class="carousel-arrow-btn" title="Anterior" aria-label="Item anterior">&#9664;</button>
+                  <button id="schedule-carousel-next" type="button" class="carousel-arrow-btn" title="Próximo" aria-label="Próximo item">&#9654;</button>
                 </div>
+                <button id="toggle-schedule-all-btn" type="button" class="btn btn-secondary btn-sm">
+                  Exibir todos os itens
+                </button>
               </div>
-              <div id="kpi-pix" class="kpi-value">R$ 0,00</div>
-              <div class="kpi-sub">
-                <span id="kpi-pix-sub">0% das entradas</span>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-top">
-                <span>Faturas de Cartões</span>
-                <div class="kpi-icon cards">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="2" y="5" width="20" height="14" rx="2" />
-                    <line x1="2" y1="10" x2="22" y2="10" />
-                  </svg>
-                </div>
-              </div>
-              <div id="kpi-cards" class="kpi-value">R$ 0,00</div>
-              <div class="kpi-sub">
-                <span id="kpi-cards-sub">0% das entradas</span>
-              </div>
-            </div>
-
-            <div class="kpi-card">
-              <div class="kpi-top">
-                <span>Saldo Livre (Sobra Real)</span>
-                <div class="kpi-icon net">
-                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                    <path d="M9 12l2 2 4-4" />
-                  </svg>
-                </div>
-              </div>
-              <div id="kpi-net" class="kpi-value">R$ 0,00</div>
-              <div class="kpi-sub">
-                <span id="kpi-net-sub">0% da renda comprometida</span>
-              </div>
+              <div id="due-schedule-grid" class="kpi-grid schedule-cards-grid schedule-carousel-mode"></div>
+              <div id="schedule-carousel-dots" class="schedule-carousel-dots"></div>
             </div>
           </div>
-        </div>
 
-        <!-- CAIXA 2: Exibir Saídas (Carrossel de até 4 itens simultâneos com botão para expandir todos) -->
-        <div class="panel overview-topic-box schedule-section">
-          <div class="schedule-header topic-box-header">
-            <div class="topic-box-heading">
-              <div class="topic-box-icon cards">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                  <line x1="16" y1="2" x2="16" y2="6" />
-                  <line x1="8" y1="2" x2="8" y2="6" />
-                  <line x1="3" y1="10" x2="21" y2="10" />
-                  <path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" />
-                </svg>
-              </div>
-              <div class="schedule-header-text">
-                <h3>Exibir Saídas</h3>
-              </div>
-            </div>
-            <div class="schedule-header-actions">
-              <span id="schedule-count-badge" class="nav-badge">0 itens no mês</span>
-              <div id="schedule-carousel-nav" class="schedule-carousel-nav">
-                <button id="schedule-carousel-prev" type="button" class="carousel-arrow-btn" title="Anterior" aria-label="Item anterior">&#9664;</button>
-                <button id="schedule-carousel-next" type="button" class="carousel-arrow-btn" title="Próximo" aria-label="Próximo item">&#9654;</button>
-              </div>
-              <button id="toggle-schedule-all-btn" type="button" class="btn btn-secondary btn-sm">
-                Exibir todos os itens
-              </button>
-            </div>
-          </div>
-          <div id="due-schedule-grid" class="kpi-grid schedule-cards-grid schedule-carousel-mode"></div>
-          <div id="schedule-carousel-dots" class="schedule-carousel-dots"></div>
-        </div>
-
-        <div class="cycle-hero">
           <!-- CAIXA 3: Gráfico do Ciclo do Dinheiro -->
-          <div class="panel overview-topic-box">
-            <div class="panel-header topic-box-header">
+          <div id="cycle-box-pie" class="panel overview-topic-box" data-cycle-box="cycle-box-pie">
+            <div class="topic-box-header topic-box-trigger" data-toggle-cycle-box="cycle-box-pie" role="button" tabindex="0" aria-expanded="false">
               <div class="topic-box-heading">
                 <div class="topic-box-icon pix">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -298,34 +319,47 @@
                 </div>
                 <div class="panel-title">
                   <h3>Gráfico do Ciclo do Dinheiro</h3>
-                  <p>Suas entradas definem 100% do gráfico; as fatias mostram os gastos, cofrinhos e o saldo que sobra.</p>
+                  <p>Distribuição visual das entradas (100%), gastos, cofrinhos e sobra real.</p>
                 </div>
               </div>
-              <div class="segmented-control">
-                <button id="pie-mode-origin-btn" class="active" data-pie-mode="origin">Por Origem</button>
-                <button id="pie-mode-category-btn" data-pie-mode="category">Por Categoria</button>
+              <div class="topic-box-right">
+                <span id="box-badge-pie" class="nav-badge">Teto: R$ 0,00</span>
+                <span class="topic-box-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
               </div>
             </div>
 
-            <div class="pie-layout">
-              <div class="pie-stage">
-                <svg id="cycle-pie-svg" class="pie-svg" viewBox="0 0 200 200"></svg>
-                <div class="pie-center-info">
-                  <span id="pie-center-label" class="pie-center-badge">Entradas (Teto 100%)</span>
-                  <div id="pie-center-value" class="pie-center-amount">R$ 0,00</div>
-                  <span id="pie-center-sub" class="pie-center-sub">Livre: R$ 0,00</span>
+            <div class="topic-box-body">
+              <div style="display: flex; justify-content: flex-end; margin-bottom: 14px">
+                <div class="segmented-control">
+                  <button id="pie-mode-origin-btn" class="active" data-pie-mode="origin">Por Origem</button>
+                  <button id="pie-mode-category-btn" data-pie-mode="category">Por Categoria</button>
                 </div>
               </div>
 
-              <div id="cycle-pie-legend" class="pie-legend"></div>
-            </div>
+              <div class="pie-layout">
+                <div class="pie-stage">
+                  <svg id="cycle-pie-svg" class="pie-svg" viewBox="0 0 200 200"></svg>
+                  <div class="pie-center-info">
+                    <span id="pie-center-label" class="pie-center-badge">Entradas (Teto 100%)</span>
+                    <div id="pie-center-value" class="pie-center-amount">R$ 0,00</div>
+                    <span id="pie-center-sub" class="pie-center-sub">Livre: R$ 0,00</span>
+                  </div>
+                </div>
 
-            <div id="deficit-banner" class="deficit-banner" style="display: none"></div>
+                <div id="cycle-pie-legend" class="pie-legend"></div>
+              </div>
+
+              <div id="deficit-banner" class="deficit-banner" style="display: none"></div>
+            </div>
           </div>
 
           <!-- CAIXA 4: Raio-X do Ciclo Mensal -->
-          <div class="panel overview-topic-box">
-            <div class="panel-header topic-box-header">
+          <div id="cycle-box-xray" class="panel overview-topic-box" data-cycle-box="cycle-box-xray">
+            <div class="topic-box-header topic-box-trigger" data-toggle-cycle-box="cycle-box-xray" role="button" tabindex="0" aria-expanded="false">
               <div class="topic-box-heading">
                 <div class="topic-box-icon net">
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -334,47 +368,69 @@
                 </div>
                 <div class="panel-title">
                   <h3>Raio-X do Ciclo Mensal</h3>
-                  <p>Resumo de entradas, saídas, cartões, dívidas e cofrinhos neste mês.</p>
+                  <p>Resumo detalhado de entradas, saídas, cartões, dívidas e cofrinhos neste mês.</p>
                 </div>
               </div>
+              <div class="topic-box-right">
+                <span id="box-badge-xray" class="nav-badge">5 áreas</span>
+                <span class="topic-box-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
+              </div>
             </div>
-            <div id="overview-side-stats" class="cycle-stats-list"></div>
-          </div>
-        </div>
 
-        <!-- CAIXA 5: Todas as Movimentações do Mês -->
-        <div class="panel overview-topic-box">
-          <div class="panel-header topic-box-header">
-            <div class="topic-box-heading">
-              <div class="topic-box-icon debt">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <line x1="8" y1="6" x2="21" y2="6" />
-                  <line x1="8" y1="12" x2="21" y2="12" />
-                  <line x1="8" y1="18" x2="21" y2="18" />
-                  <line x1="3" y1="6" x2="3.01" y2="6" />
-                  <line x1="3" y1="12" x2="3.01" y2="12" />
-                  <line x1="3" y1="18" x2="3.01" y2="18" />
-                </svg>
-              </div>
-              <div class="panel-title">
-                <h3>Todas as Movimentações do Mês</h3>
-                <p>Histórico consolidado de entradas, saídas, compras nos cartões e cofrinhos.</p>
-              </div>
+            <div class="topic-box-body">
+              <div id="overview-side-stats" class="cycle-stats-list"></div>
             </div>
           </div>
-          <div class="table-wrap">
-            <table class="data-table">
-              <thead>
-                <tr>
-                  <th>Descrição</th>
-                  <th>Origem / Tipo</th>
-                  <th>Categoria</th>
-                  <th>Data</th>
-                  <th>Valor</th>
-                </tr>
-              </thead>
-              <tbody id="recent-movements-tbody"></tbody>
-            </table>
+
+          <!-- CAIXA 5: Todas as Movimentações do Mês -->
+          <div id="cycle-box-movements" class="panel overview-topic-box" data-cycle-box="cycle-box-movements">
+            <div class="topic-box-header topic-box-trigger" data-toggle-cycle-box="cycle-box-movements" role="button" tabindex="0" aria-expanded="false">
+              <div class="topic-box-heading">
+                <div class="topic-box-icon debt">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6" />
+                    <line x1="8" y1="12" x2="21" y2="12" />
+                    <line x1="8" y1="18" x2="21" y2="18" />
+                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                  </svg>
+                </div>
+                <div class="panel-title">
+                  <h3>Todas as Movimentações do Mês</h3>
+                  <p>Histórico consolidado de entradas, saídas, compras nos cartões e cofrinhos.</p>
+                </div>
+              </div>
+              <div class="topic-box-right">
+                <span id="box-badge-movements" class="nav-badge">0 lançamentos</span>
+                <span class="topic-box-chevron" aria-hidden="true">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="6 9 12 15 18 9" />
+                  </svg>
+                </span>
+              </div>
+            </div>
+
+            <div class="topic-box-body">
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Descrição</th>
+                      <th>Origem / Tipo</th>
+                      <th>Categoria</th>
+                      <th>Data</th>
+                      <th>Valor</th>
+                    </tr>
+                  </thead>
+                  <tbody id="recent-movements-tbody"></tbody>
+                </table>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1618,6 +1674,6 @@
     </div>
   </div>
 
-  <script type="module" src="./app.js?v=20261119a"></script>
+  <script type="module" src="./app.js?v=20261119b"></script>
 </body>
 </html>
